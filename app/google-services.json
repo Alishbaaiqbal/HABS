@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "212873866734",
+    "project_id": "fyp-maju",
+    "storage_bucket": "fyp-maju.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212873866734:android:d2ad04bb7dc9e1fc3432ff",
+        "android_client_info": {
+          "package_name": "com.example.fyp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB73qmutYvCzMhrttQ15WS774Ve7BeJMr0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212873866734:android:d921d3855c3a18b83432ff",
+        "android_client_info": {
+          "package_name": "com.example.habs_mainpage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB73qmutYvCzMhrttQ15WS774Ve7BeJMr0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

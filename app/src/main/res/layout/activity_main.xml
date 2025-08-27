@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- App Logo -->
+    <ImageView
+        android:id="@+id/appLogo"
+        android:layout_width="309dp"
+        android:layout_height="241dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="16dp"
+        android:src="@drawable/logo" />
+
+    <!-- App Name -->
+    <TextView
+        android:id="@+id/appName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="60dp"
+        android:lineSpacingExtra="8sp"
+        android:text="Habs"
+        android:textAllCaps="true"
+        android:textColor="@android:color/holo_red_dark"
+        android:textSize="34sp"
+        android:textStyle="bold" />
+
+    <!-- Signup Button -->
+    <Button
+        android:id="@+id/btnSignup"
+        android:layout_width="155dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@android:color/holo_red_dark"
+        android:paddingHorizontal="30dp"
+        android:text="Signup"
+        android:textColor="@android:color/white" />
+
+    <!-- Login Button -->
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="158dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:backgroundTint="@android:color/holo_red_dark"
+        android:paddingHorizontal="30dp"
+        android:text="Login"
+        android:textColor="@android:color/white" />
+
+
+</LinearLayout>

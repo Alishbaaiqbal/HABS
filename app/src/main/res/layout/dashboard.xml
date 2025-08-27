@@ -1,0 +1,71 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="16dp">
+
+    <!-- Location Header with Logo -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
+
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/logo"
+            android:contentDescription="App Logo" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your Location"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingStart="12dp"
+            android:textColor="#000000" />
+    </LinearLayout>
+
+    <!-- Address below location (updated using Geocoder) -->
+    <TextView
+        android:id="@+id/tv_current_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Detecting your location..."
+        android:textSize="14sp"
+        android:textColor="#444444"
+        android:paddingBottom="8dp" />
+
+    <!-- Section Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nearby Hospitals"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:textColor="#222222" />
+
+    <!-- Google Map -->
+    <fragment
+        android:id="@+id/map_fragment"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:layout_marginBottom="8dp"
+        android:background="#DDDDDD" />
+
+    <!-- Hospital List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_hospitals"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="4dp"
+        android:paddingBottom="8dp" />
+</LinearLayout>

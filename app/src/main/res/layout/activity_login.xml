@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="20dp"
+    tools:context=".Login"
+    tools:ignore="ExtraText">
+
+    <ImageView
+        android:id="@+id/habslogo"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        android:src="@drawable/logo" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="84dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="25dp"
+        android:gravity="center"
+        android:padding="15dp"
+        android:text="HABS"
+        android:textColor="#D32F2F"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
+
+    <EditText
+        android:id="@+id/Email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:autofillHints=""
+        android:hint="Email"
+        android:padding="12dp"
+        android:drawablePadding="8dp"
+        android:drawableStart="@drawable/email"
+        tools:ignore="HardcodedText,TextFields,VisualLintTextFieldSize"/>
+
+
+    <EditText
+        android:id="@+id/PASSWORD"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:autofillHints=""
+        android:drawableStart="@drawable/password"
+        android:drawablePadding="8dp"
+        android:hint="PASSWORD"
+        android:padding="12dp"
+        android:textColorHint="#546E7A"
+        tools:ignore="HardcodedText,TextFields,VisualLintTextFieldSize" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginTop="16dp" />
+
+    <Button
+        android:id="@+id/btn_login"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="24dp"
+        android:backgroundTint="#D32F2F"
+        android:text="login"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        tools:ignore="VisualLintButtonSize" />
+    <Button
+        android:id="@+id/btn_SignUp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="24dp"
+        android:backgroundTint="#D32F2F"
+        android:text="signup"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        tools:ignore="VisualLintButtonSize" />
+
+
+    <TextView
+        android:id="@+id/forgotPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:minHeight="48dp"
+        android:text="forgot password"
+        android:textColor="#000000"
+        android:textStyle="bold" />
+
+</LinearLayout>
