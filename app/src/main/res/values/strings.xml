@@ -1,9 +1,9 @@
 <resources>
     <string name="app_name">HABS-mainPage</string>
-    <string name="time_filter">Time</string>
-    <string name="availability_filter">Availability</string>
-    <string name="specialization_filter">Specialization</string>
-    <string name="fees_filter">Fees</string>
 
+    <string name="filter_by_time">Filter by Time</string>
+    <string name="filter_availability">Availability</string>
+    <string name="filter_specialization">Specialization</string>
+    <string name="filter_consultation">Consultation</string>
 
 </resources>

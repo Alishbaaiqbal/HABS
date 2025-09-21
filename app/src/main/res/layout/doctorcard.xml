@@ -2,11 +2,10 @@
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
+    android:layout_margin="8dp"
     card_view:cardElevation="4dp"
     card_view:cardCornerRadius="12dp"
-    card_view:cardBackgroundColor="@android:color/white"
-    android:layout_margin="8dp">
+    card_view:cardBackgroundColor="@android:color/white">
 
     <LinearLayout
         android:orientation="horizontal"
@@ -15,18 +14,22 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical">
 
+        <!-- Doctor Icon -->
         <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_marginEnd="12dp"
-            android:src="@drawable/doctor"/>
+            android:src="@drawable/doctor"
+            android:contentDescription="Doctor Icon" />
 
+        <!-- Doctor Info -->
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1">
 
+            <!-- Name -->
             <TextView
                 android:id="@+id/tv_doctor_name"
                 android:text="Dr. Name"
@@ -36,21 +39,43 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
+            <!-- Specialization -->
             <TextView
                 android:id="@+id/tv_specialization"
                 android:text="Specialization"
-                android:textColor="#777777"
+                android:textColor="#555555"
                 android:textSize="14sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
+            <!-- Timing -->
             <TextView
                 android:id="@+id/tv_timing"
-                android:text="10:00 AM - 2:00 PM"
+                android:text="Timing: 10:00 AM - 2:00 PM"
                 android:textColor="#4CAF50"
                 android:textSize="14sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
+
+            <!-- Availability -->
+            <TextView
+                android:id="@+id/tv_availability"
+                android:text="Availability: Available"
+                android:textColor="#2196F3"
+                android:textSize="14sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <!-- Fee -->
+            <TextView
+                android:id="@+id/tv_fee"
+                android:text="Fee: 2000 PKR"
+                android:textColor="#E91E63"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

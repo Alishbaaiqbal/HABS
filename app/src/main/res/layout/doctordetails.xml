@@ -1,8 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
     android:background="#F7F7F7">
 
     <!-- Title -->
@@ -14,61 +14,124 @@
         android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="#1A1A1A"
-        android:padding="8dp"
+        android:padding="12dp"
         android:background="#FFFFFF"
-        android:elevation="2dp"
+        android:elevation="4dp"
         android:gravity="center"
+        android:layout_margin="8dp"
         android:layout_marginBottom="12dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginHorizontal="4dp" />
+        android:layout_marginTop="12dp" />
 
     <!-- Filters Section -->
-    <LinearLayout
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="#FFFFFF"
-        android:elevation="2dp"
-        android:padding="8dp"
-        android:layout_marginBottom="12dp"
-        android:layout_marginHorizontal="4dp"
-        android:gravity="center_vertical">
+        android:scrollbars="none"
+        android:fillViewport="true">
 
-        <Spinner
-            android:id="@+id/spinner_time"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:prompt="@string/time_filter"
-            android:spinnerMode="dropdown" />
+            android:orientation="horizontal"
+            android:background="#FFFFFF"
+            android:elevation="3dp"
+            android:padding="8dp"
+            android:layout_marginHorizontal="8dp"
+            android:layout_marginBottom="12dp">
 
-        <Spinner
-            android:id="@+id/spinner_availability"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:prompt="@string/availability_filter"
-            android:spinnerMode="dropdown"
-            android:layout_marginStart="8dp"/>
+            <!-- Time Filter -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginEnd="12dp">
 
-        <Spinner
-            android:id="@+id/spinner_specialization"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:prompt="@string/specialization_filter"
-            android:spinnerMode="dropdown"
-            android:layout_marginStart="8dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Filter by Time"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:paddingBottom="4dp"/>
 
-        <Spinner
-            android:id="@+id/spinner_fees"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:prompt="@string/fees_filter"
-            android:spinnerMode="dropdown"
-            android:layout_marginStart="8dp"/>
-    </LinearLayout>
+                <Spinner
+                    android:id="@+id/spinner_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:spinnerMode="dropdown"/>
+            </LinearLayout>
+
+            <!-- Availability Filter -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginEnd="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Availability"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:paddingBottom="4dp"/>
+
+                <Spinner
+                    android:id="@+id/spinner_availability"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:spinnerMode="dropdown"/>
+            </LinearLayout>
+
+            <!-- Specialization Filter -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginEnd="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Specialization"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:paddingBottom="4dp"/>
+
+                <Spinner
+                    android:id="@+id/spinner_specialization"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:spinnerMode="dropdown"/>
+            </LinearLayout>
+
+            <!-- Consultation Fee Filter -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Consultation Fee"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:paddingBottom="4dp"/>
+
+                <Spinner
+                    android:id="@+id/spinner_fees"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:spinnerMode="dropdown"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <!-- Doctor List -->
     <androidx.recyclerview.widget.RecyclerView
@@ -77,8 +140,9 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:background="#FFFFFF"
-        android:elevation="2dp"
+        android:elevation="3dp"
         android:clipToPadding="false"
-        android:paddingBottom="8dp"/>
-
+        android:padding="8dp"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginBottom="12dp"/>
 </LinearLayout>

@@ -1,14 +1,26 @@
 package com.example.habs_mainpage;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class DoctorDetailsActivity extends AppCompatActivity {
+
+    private List<Doctor> doctorList;
+    private List<Doctor> filteredList;
+    private DoctorAdapter adapter;
+
+    Spinner spinnerTime, spinnerAvailability, spinnerSpecialization, spinnerFees;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,12 +35,120 @@ public class DoctorDetailsActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recycler_doctors);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        List<Doctor> doctorList = new ArrayList<>();
-        doctorList.add(new Doctor("Dr. Ahmed", "Cardiologist", "10:00 AM - 2:00 PM"));
-        doctorList.add(new Doctor("Dr. Fatima", "Dermatologist", "11:00 AM - 3:00 PM"));
-        doctorList.add(new Doctor("Dr. Usman", "ENT Specialist", "12:00 PM - 4:00 PM"));
+        // --- Hardcoded Doctor Data (with extra fields for filtering) ---
+        doctorList = new ArrayList<>();
+        doctorList.add(new Doctor("Dr. Ahmed", "Cardiologist", "Morning", "Available", "2000"));
+        doctorList.add(new Doctor("Dr. Fatima", "Dermatologist", "Afternoon", "Not Available", "1500"));
+        doctorList.add(new Doctor("Dr. Usman", "ENT Specialist", "Evening", "Available", "2500"));
+        doctorList.add(new Doctor("Dr. Sara", "Pediatrician", "Morning", "Available", "1000"));
+        doctorList.add(new Doctor("Dr. Ali", "Neurologist", "Afternoon", "Not Available", "3000"));
 
-        DoctorAdapter adapter = new DoctorAdapter(doctorList);
+        filteredList = new ArrayList<>(doctorList);
+        adapter = new DoctorAdapter(filteredList);
         recyclerView.setAdapter(adapter);
+
+        // --- Initialize Spinners ---
+        spinnerTime = findViewById(R.id.spinner_time);
+        spinnerAvailability = findViewById(R.id.spinner_availability);
+        spinnerSpecialization = findViewById(R.id.spinner_specialization);
+        spinnerFees = findViewById(R.id.spinner_fees);
+
+        setupSpinners();
+    }
+
+    private void setupSpinners() {
+        // Time filter
+        ArrayAdapter<String> timeAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item,
+                new String[]{"All", "Morning", "Afternoon", "Evening"});
+        timeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerTime.setAdapter(timeAdapter);
+
+        // Availability filter
+        ArrayAdapter<String> availabilityAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item,
+                new String[]{"All", "Available", "Not Available"});
+        availabilityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerAvailability.setAdapter(availabilityAdapter);
+
+        // Specialization filter
+        ArrayAdapter<String> specializationAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item,
+                new String[]{"All", "Cardiologist", "Dermatologist", "ENT Specialist", "Pediatrician", "Neurologist"});
+        specializationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSpecialization.setAdapter(specializationAdapter);
+
+        // Fees filter
+        ArrayAdapter<String> feesAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item,
+                new String[]{"All", "≤1500", "1501-2500", "2501-3000"});
+        feesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerFees.setAdapter(feesAdapter);
+
+        // Set listeners for all spinners
+        AdapterView.OnItemSelectedListener filterListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                applyFilters();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        };
+
+        spinnerTime.setOnItemSelectedListener(filterListener);
+        spinnerAvailability.setOnItemSelectedListener(filterListener);
+        spinnerSpecialization.setOnItemSelectedListener(filterListener);
+        spinnerFees.setOnItemSelectedListener(filterListener);
+    }
+
+    private void applyFilters() {
+        String selectedTime = spinnerTime.getSelectedItem().toString();
+        String selectedAvailability = spinnerAvailability.getSelectedItem().toString();
+        String selectedSpecialization = spinnerSpecialization.getSelectedItem().toString();
+        String selectedFees = spinnerFees.getSelectedItem().toString();
+
+        filteredList.clear();
+
+        for (Doctor d : doctorList) {
+            boolean matches = true;
+
+            // Time
+            if (!selectedTime.equals("All") && !d.timing.equals(selectedTime)) {
+                matches = false;
+            }
+
+            // Availability
+            if (!selectedAvailability.equals("All") && !d.availability.equals(selectedAvailability)) {
+                matches = false;
+            }
+
+            // Specialization
+            if (!selectedSpecialization.equals("All") && !d.specialization.equals(selectedSpecialization)) {
+                matches = false;
+            }
+
+            // Fees
+            if (!selectedFees.equals("All")) {
+                int fee = Integer.parseInt(d.fees);
+                switch (selectedFees) {
+                    case "≤1500":
+                        if (fee > 1500) matches = false;
+                        break;
+                    case "1501-2500":
+                        if (fee < 1501 || fee > 2500) matches = false;
+                        break;
+                    case "2501-3000":
+                        if (fee < 2501 || fee > 3000) matches = false;
+                        break;
+                }
+            }
+
+            if (matches) {
+                filteredList.add(d);
+            }
+        }
+
+        adapter.notifyDataSetChanged();
     }
 }
