@@ -46,36 +46,118 @@
                 android:textColor="#555555"
                 android:textSize="14sp"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"/>
 
-            <!-- Timing -->
-            <TextView
-                android:id="@+id/tv_timing"
-                android:text="Timing: 10:00 AM - 2:00 PM"
-                android:textColor="#4CAF50"
-                android:textSize="14sp"
+            <!-- Timing (with clock icon) -->
+            <LinearLayout
+                android:orientation="horizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="2dp">
 
-            <!-- Availability -->
-            <TextView
-                android:id="@+id/tv_availability"
-                android:text="Availability: Available"
-                android:textColor="#2196F3"
-                android:textSize="14sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_menu_recent_history"
+                    android:tint="#4CAF50"
+                    android:layout_marginEnd="6dp" />
 
-            <!-- Fee -->
-            <TextView
-                android:id="@+id/tv_fee"
-                android:text="Fee: 2000 PKR"
-                android:textColor="#E91E63"
-                android:textStyle="bold"
-                android:textSize="14sp"
+                <TextView
+                    android:id="@+id/tv_timing"
+                    android:text="10:00 AM - 2:00 PM"
+                    android:textColor="#4CAF50"
+                    android:textSize="14sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Availability (with calendar icon) -->
+            <LinearLayout
+                android:orientation="horizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="2dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_menu_my_calendar"
+                    android:tint="#2196F3"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/tv_availability"
+                    android:text="Available"
+                    android:textColor="#2196F3"
+                    android:textSize="14sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Fee (with info icon) -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="2dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_menu_info_details"
+                    android:tint="#E91E63"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/tv_fee"
+                    android:text="2000 PKR"
+                    android:textColor="#E91E63"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Consultation Time (with stopwatch icon) -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_menu_day"
+                    android:tint="#FF9800"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/tv_consultation_time"
+                    android:text="15 mins per patient"
+                    android:textColor="#FF9800"
+                    android:textStyle="italic"
+                    android:textSize="14sp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
 
         </LinearLayout>
+
+        <!-- Book Button -->
+        <Button
+            android:id="@+id/btn_book"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Book"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/purple_500"
+            android:layout_marginStart="8dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

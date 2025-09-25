@@ -35,14 +35,17 @@ public class DoctorDetailsActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recycler_doctors);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // --- Hardcoded Doctor Data (with extra fields for filtering) ---
+        // --- Hardcoded Doctor Data (with Consultation Time) ---
         doctorList = new ArrayList<>();
-        doctorList.add(new Doctor("Dr. Ahmed", "Cardiologist", "Morning", "Available", "2000"));
-        doctorList.add(new Doctor("Dr. Fatima", "Dermatologist", "Afternoon", "Not Available", "1500"));
-        doctorList.add(new Doctor("Dr. Usman", "ENT Specialist", "Evening", "Available", "2500"));
-        doctorList.add(new Doctor("Dr. Sara", "Pediatrician", "Morning", "Available", "1000"));
-        doctorList.add(new Doctor("Dr. Ali", "Neurologist", "Afternoon", "Not Available", "3000"));
-
+        doctorList.add(new Doctor("Dr. Ahmed Khan", "Cardiologist", "Morning", true, "2000", "15"));
+        doctorList.add(new Doctor("Dr. Fatima Malik", "Dermatologist", "Afternoon", false, "1500", "20"));
+        doctorList.add(new Doctor("Dr. Usman Ali", "ENT Specialist", "Evening", true, "2500", "10"));
+        doctorList.add(new Doctor("Dr. Sara Ahmed", "Pediatrician", "Morning", true, "1000", "25"));
+        doctorList.add(new Doctor("Dr. Ali Raza", "Neurologist", "Afternoon", false, "3000", "30"));
+        doctorList.add(new Doctor("Dr. Ayesha Noor", "Gynecologist", "Evening", true, "2200", "20"));
+        doctorList.add(new Doctor("Dr. Bilal Hussain", "Orthopedic Surgeon", "Morning", true, "3500", "25"));
+        doctorList.add(new Doctor("Dr. Imran Sheikh", "General Physician", "Afternoon", true, "1200", "15"));
+        doctorList.add(new Doctor("Dr. Nadia Khan", "Psychiatrist", "Evening", false, "2800", "40"));
         filteredList = new ArrayList<>(doctorList);
         adapter = new DoctorAdapter(filteredList);
         recyclerView.setAdapter(adapter);
@@ -119,7 +122,7 @@ public class DoctorDetailsActivity extends AppCompatActivity {
             }
 
             // Availability
-            if (!selectedAvailability.equals("All") && !d.availability.equals(selectedAvailability)) {
+            if (!selectedAvailability.equals("All") && !d.isAvailability()) {
                 matches = false;
             }
 
