@@ -1,157 +1,153 @@
 package com.example.habs_mainpage;
 
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
-import android.widget.TextView;
+import android.util.Log;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class DoctorDetailsActivity extends AppCompatActivity {
 
-    private List<Doctor> doctorList;
-    private List<Doctor> filteredList;
+    private RecyclerView recyclerView;
     private DoctorAdapter adapter;
-
-    Spinner spinnerTime, spinnerAvailability, spinnerSpecialization, spinnerFees;
+    private final List<Doctor> doctorList = new ArrayList<>();
+    private String hospitalName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.doctordetails);
 
-        String hospitalName = getIntent().getStringExtra("hospital_name");
-
-        TextView title = findViewById(R.id.tv_hospital_title);
-        title.setText("Doctors at " + hospitalName);
-
-        RecyclerView recyclerView = findViewById(R.id.recycler_doctors);
+        recyclerView = findViewById(R.id.recycler_doctors);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // --- Hardcoded Doctor Data (with Consultation Time) ---
-        doctorList = new ArrayList<>();
-        doctorList.add(new Doctor("Dr. Ahmed Khan", "Cardiologist", "Morning", true, "2000", "15"));
-        doctorList.add(new Doctor("Dr. Fatima Malik", "Dermatologist", "Afternoon", false, "1500", "20"));
-        doctorList.add(new Doctor("Dr. Usman Ali", "ENT Specialist", "Evening", true, "2500", "10"));
-        doctorList.add(new Doctor("Dr. Sara Ahmed", "Pediatrician", "Morning", true, "1000", "25"));
-        doctorList.add(new Doctor("Dr. Ali Raza", "Neurologist", "Afternoon", false, "3000", "30"));
-        doctorList.add(new Doctor("Dr. Ayesha Noor", "Gynecologist", "Evening", true, "2200", "20"));
-        doctorList.add(new Doctor("Dr. Bilal Hussain", "Orthopedic Surgeon", "Morning", true, "3500", "25"));
-        doctorList.add(new Doctor("Dr. Imran Sheikh", "General Physician", "Afternoon", true, "1200", "15"));
-        doctorList.add(new Doctor("Dr. Nadia Khan", "Psychiatrist", "Evening", false, "2800", "40"));
-        filteredList = new ArrayList<>(doctorList);
-        adapter = new DoctorAdapter(filteredList);
+        adapter = new DoctorAdapter(this, doctorList);
         recyclerView.setAdapter(adapter);
 
-        // --- Initialize Spinners ---
-        spinnerTime = findViewById(R.id.spinner_time);
-        spinnerAvailability = findViewById(R.id.spinner_availability);
-        spinnerSpecialization = findViewById(R.id.spinner_specialization);
-        spinnerFees = findViewById(R.id.spinner_fees);
+        hospitalName = getIntent().getStringExtra("hospital_name");
+        if (hospitalName == null || hospitalName.isEmpty()) {
+            hospitalName = "General Hospital";
+        }
 
-        setupSpinners();
+        loadDoctorsFromJSON(hospitalName);
     }
 
-    private void setupSpinners() {
-        // Time filter
-        ArrayAdapter<String> timeAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item,
-                new String[]{"All", "Morning", "Afternoon", "Evening"});
-        timeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerTime.setAdapter(timeAdapter);
+    private void loadDoctorsFromJSON(String selectedHospital) {
+        try (InputStream inputStream = getAssets().open("DoctorDataset.json")) {
+            byte[] buffer = new byte[inputStream.available()];
+            inputStream.read(buffer);
+            String jsonString = new String(buffer, StandardCharsets.UTF_8);
 
-        // Availability filter
-        ArrayAdapter<String> availabilityAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item,
-                new String[]{"All", "Available", "Not Available"});
-        availabilityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerAvailability.setAdapter(availabilityAdapter);
+            JSONObject rootObject = new JSONObject(jsonString);
+            String bestKey = findBestHospitalKey(rootObject, selectedHospital);
 
-        // Specialization filter
-        ArrayAdapter<String> specializationAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item,
-                new String[]{"All", "Cardiologist", "Dermatologist", "ENT Specialist", "Pediatrician", "Neurologist"});
-        specializationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerSpecialization.setAdapter(specializationAdapter);
+            doctorList.clear();
 
-        // Fees filter
-        ArrayAdapter<String> feesAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item,
-                new String[]{"All", "≤1500", "1501-2500", "2501-3000"});
-        feesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerFees.setAdapter(feesAdapter);
+            if (bestKey != null && rootObject.has(bestKey)) {
+                JSONArray doctorsArray = rootObject.getJSONArray(bestKey);
+                Log.d("DoctorMatch", "✅ Matched hospital: " + bestKey + " (" + doctorsArray.length() + " doctors)");
 
-        // Set listeners for all spinners
-        AdapterView.OnItemSelectedListener filterListener = new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                applyFilters();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        };
-
-        spinnerTime.setOnItemSelectedListener(filterListener);
-        spinnerAvailability.setOnItemSelectedListener(filterListener);
-        spinnerSpecialization.setOnItemSelectedListener(filterListener);
-        spinnerFees.setOnItemSelectedListener(filterListener);
-    }
-
-    private void applyFilters() {
-        String selectedTime = spinnerTime.getSelectedItem().toString();
-        String selectedAvailability = spinnerAvailability.getSelectedItem().toString();
-        String selectedSpecialization = spinnerSpecialization.getSelectedItem().toString();
-        String selectedFees = spinnerFees.getSelectedItem().toString();
-
-        filteredList.clear();
-
-        for (Doctor d : doctorList) {
-            boolean matches = true;
-
-            // Time
-            if (!selectedTime.equals("All") && !d.timing.equals(selectedTime)) {
-                matches = false;
-            }
-
-            // Availability
-            if (!selectedAvailability.equals("All") && !d.isAvailability()) {
-                matches = false;
-            }
-
-            // Specialization
-            if (!selectedSpecialization.equals("All") && !d.specialization.equals(selectedSpecialization)) {
-                matches = false;
-            }
-
-            // Fees
-            if (!selectedFees.equals("All")) {
-                int fee = Integer.parseInt(d.fees);
-                switch (selectedFees) {
-                    case "≤1500":
-                        if (fee > 1500) matches = false;
-                        break;
-                    case "1501-2500":
-                        if (fee < 1501 || fee > 2500) matches = false;
-                        break;
-                    case "2501-3000":
-                        if (fee < 2501 || fee > 3000) matches = false;
-                        break;
+                for (int i = 0; i < doctorsArray.length(); i++) {
+                    JSONObject obj = doctorsArray.getJSONObject(i);
+                    doctorList.add(new Doctor(
+                            obj.optString("Doctor Name", "Unknown"),
+                            obj.optString("Specialization", "N/A"),
+                            obj.optString("Doctor Qualification", ""),
+                            obj.optString("Experience(Years)", ""),
+                            obj.optString("Total_Reviews", ""),
+                            obj.optString("Patient Satisfaction Rate(%age)", ""),
+                            obj.optString("Avg Time to Patients(mins)", ""),
+                            obj.optString("Wait Time(mins)", ""),
+                            obj.optString("Fee(PKR)", ""),
+                            obj.optString("Timing", obj.optString("Timings", "")) // ✅ handles both
+                    ));
                 }
+            } else if (rootObject.has("General Hospital")) {
+                JSONArray defaultDoctors = rootObject.getJSONArray("General Hospital");
+                Log.w("DoctorMatch", "⚠ No match for " + selectedHospital + ". Using General Hospital doctors.");
+
+                for (int i = 0; i < defaultDoctors.length(); i++) {
+                    JSONObject obj = defaultDoctors.getJSONObject(i);
+                    doctorList.add(new Doctor(
+                            obj.optString("Doctor Name", "Unknown"),
+                            obj.optString("Specialization", "N/A"),
+                            obj.optString("Doctor Qualification", ""),
+                            obj.optString("Experience(Years)", ""),
+                            obj.optString("Total_Reviews", ""),
+                            obj.optString("Patient Satisfaction Rate(%age)", ""),
+                            obj.optString("Avg Time to Patients(mins)", ""),
+                            obj.optString("Wait Time(mins)", ""),
+                            obj.optString("Fee(PKR)", ""),
+                            obj.optString("Timing", obj.optString("Timings", ""))
+                    ));
+                }
+                Toast.makeText(this, "No exact match found — showing General Hospital doctors.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "No matching hospital found in JSON.", Toast.LENGTH_SHORT).show();
             }
 
-            if (matches) {
-                filteredList.add(d);
+            adapter.notifyDataSetChanged();
+
+        } catch (Exception e) {
+            Log.e("DoctorDetails", "Error reading JSON", e);
+            Toast.makeText(this, "Failed to load doctor data.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ✅ Improved hospital name matching
+    private String findBestHospitalKey(JSONObject rootObject, String selectedHospital) {
+        String target = cleanName(selectedHospital);
+        String bestKey = null;
+        double bestScore = 0.0;
+
+        Iterator<String> keys = rootObject.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            String cleanedKey = cleanName(key);
+
+            if (cleanedKey.contains(target) || target.contains(cleanedKey)) {
+                Log.d("DoctorMatch", "🔹 Partial match found: " + key);
+                return key;
+            }
+
+            double score = tokenOverlapScore(target, cleanedKey);
+            if (score > bestScore) {
+                bestScore = score;
+                bestKey = key;
             }
         }
 
-        adapter.notifyDataSetChanged();
+        Log.d("DoctorMatch", "Best fuzzy match score: " + bestScore + " for key " + bestKey);
+        return bestScore >= 0.4 ? bestKey : null;
+    }
+
+    private double tokenOverlapScore(String a, String b) {
+        String[] ta = a.split("\\s+");
+        String[] tb = b.split("\\s+");
+        java.util.HashSet<String> sa = new java.util.HashSet<>();
+        java.util.HashSet<String> sb = new java.util.HashSet<>();
+        for (String s : ta) sa.add(s);
+        for (String s : tb) sb.add(s);
+        java.util.HashSet<String> inter = new java.util.HashSet<>(sa);
+        inter.retainAll(sb);
+        java.util.HashSet<String> union = new java.util.HashSet<>(sa);
+        union.addAll(sb);
+        return union.isEmpty() ? 0 : (double) inter.size() / union.size();
+    }
+
+    private String cleanName(String name) {
+        return name == null ? "" :
+                name.toLowerCase().replaceAll("[^a-z0-9\\s]", "").replaceAll("\\s+", " ").trim();
     }
 }

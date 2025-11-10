@@ -1,74 +1,69 @@
 package com.example.habs_mainpage;
 
+import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
 public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorViewHolder> {
 
-    private List<Doctor> doctorList;
+    private final Context context;
+    private final List<Doctor> doctorList;
 
-    public DoctorAdapter(List<Doctor> doctorList) {
+    public DoctorAdapter(Context context, List<Doctor> doctorList) {
+        this.context = context;
         this.doctorList = doctorList;
     }
 
-    @NonNull
     @Override
-    public DoctorViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.doctorcard, parent, false);
+    public DoctorViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context).inflate(R.layout.doctorcard, parent, false);
         return new DoctorViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull DoctorViewHolder holder, int position) {
+    public void onBindViewHolder(DoctorViewHolder holder, int position) {
         Doctor doctor = doctorList.get(position);
 
-        holder.name.setText(doctor.name);
-        holder.specialization.setText("Specialization: " + doctor.specialization);
-        holder.timing.setText("Timing: " + doctor.timing);
-        holder.fees.setText("Fee: " + doctor.fees + " PKR");
-        holder.consultationTime.setText("Consultation: " + doctor.consultationTime + "min");
+        holder.name.setText(doctor.getName());
+        holder.specialization.setText("Specialization: " + doctor.getSpecialization());
+        holder.qualification.setText("Qualification: " + doctor.getQualification());
+        holder.experience.setText("Experience: " + doctor.getExperience() + " years");
+        holder.reviews.setText("Reviews: " + doctor.getTotalReviews());
+        holder.satisfaction.setText("Satisfaction: " + doctor.getSatisfactionRate() + "%");
+        holder.avgTime.setText("Avg Time: " + doctor.getAvgTime() + " mins");
+        holder.waitTime.setText("Wait Time: " + doctor.getWaitTime() + " mins");
+        holder.fee.setText("Fee: Rs. " + doctor.getFee());
 
-        // ✅ Show availability with boolean
-        if (doctor.isAvailability()) {
-            holder.availability.setText("Available");
-            holder.availability.setTextColor(Color.parseColor("#2E7D32")); // Green
-            holder.btnBook.setEnabled(true);
-            holder.btnBook.setAlpha(1f);
+        // ✅ Show timing from JSON
+        if (doctor.getTiming() != null && !doctor.getTiming().isEmpty()) {
+            holder.timing.setText("Timing: " + doctor.getTiming());
         } else {
-            holder.availability.setText("Not Available");
-            holder.availability.setTextColor(Color.parseColor("#C62828")); // Red
-            holder.btnBook.setEnabled(false);
-            holder.btnBook.setAlpha(0.5f); // fade disabled button
+            holder.timing.setText("Timing: Not available");
         }
 
-        // ✅ Book button logic
         holder.btnBook.setOnClickListener(v -> {
-            if (doctor.isAvailability()) {
-                // Doctor available → open AppointmentBookingActivity
-                Intent intent = new Intent(v.getContext(), AppointmentBookingActivity.class);
-                intent.putExtra("doctorName", doctor.name);
-                intent.putExtra("specialization", doctor.specialization);
-                intent.putExtra("fee", doctor.fees);
-                intent.putExtra("timing", doctor.timing);
-                intent.putExtra("consultationTime", doctor.consultationTime);
-                v.getContext().startActivity(intent);
-            } else {
-                // Doctor not available → show message
-                Toast.makeText(v.getContext(), "Doctor not available right now", Toast.LENGTH_SHORT).show();
-            }
+            Intent intent = new Intent(context, AppointmentBookingActivity.class);
+            intent.putExtra("doctorName", doctor.getName());
+            intent.putExtra("specialization", doctor.getSpecialization());
+            intent.putExtra("fee", doctor.getFee());
+            intent.putExtra("timing", doctor.getTiming());
+
+            // ✅ Directly use Avg Time instead of consultationTime
+            String avgTime = doctor.getAvgTime(); // e.g. "15 mins"
+            intent.putExtra("avgTime", avgTime);
+
+            context.startActivity(intent);
         });
+
     }
 
     @Override
@@ -76,18 +71,23 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
         return doctorList.size();
     }
 
-    static class DoctorViewHolder extends RecyclerView.ViewHolder {
-        TextView name, specialization, timing, availability, fees, consultationTime;
+    public static class DoctorViewHolder extends RecyclerView.ViewHolder {
+        TextView name, specialization, qualification, experience, reviews, satisfaction,
+                avgTime, waitTime, fee, timing;
         Button btnBook;
 
-        public DoctorViewHolder(@NonNull View itemView) {
+        public DoctorViewHolder(View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.tv_doctor_name);
             specialization = itemView.findViewById(R.id.tv_specialization);
-            timing = itemView.findViewById(R.id.tv_timing);
-            availability = itemView.findViewById(R.id.tv_availability);
-            fees = itemView.findViewById(R.id.tv_fee);
-            consultationTime = itemView.findViewById(R.id.tv_consultation_time);
+            qualification = itemView.findViewById(R.id.tv_qualification);
+            experience = itemView.findViewById(R.id.tv_experience);
+            reviews = itemView.findViewById(R.id.tv_reviews);
+            satisfaction = itemView.findViewById(R.id.tv_satisfaction);
+            avgTime = itemView.findViewById(R.id.tv_avg_time);
+            waitTime = itemView.findViewById(R.id.tv_wait_time);
+            fee = itemView.findViewById(R.id.tv_fee);
+            timing = itemView.findViewById(R.id.tv_timing); // ✅ added
             btnBook = itemView.findViewById(R.id.btn_book);
         }
     }

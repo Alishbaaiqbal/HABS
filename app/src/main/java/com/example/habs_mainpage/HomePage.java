@@ -10,7 +10,6 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -36,21 +35,28 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
 
+    private static final String TAG = "HomePage";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
-    private static final String API_KEY = "AIzaSyDOvI7B1rs0ZZhDUNVNmRs83xaYtx__hX0";
+
+    // ✅ Your Google API key
+    private static final String API_KEY = "AIzaSyD0LZrCsWehM4x9opUS7gKPQobUUzvBJKA";
 
     private GoogleMap mMap;
     private FusedLocationProviderClient fusedLocationClient;
-    private LocationCallback locationCallback;
     private TextView currentAddressTextView;
 
     private RecyclerView recyclerView;
     private HospitalAdapter adapter;
-    private List<Hospital> hospitalList;
+    private final List<Hospital> hospitalList = new ArrayList<>();
+
+    private boolean isLocationFetched = false; // Prevent multiple calls
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,33 +66,24 @@ public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
         currentAddressTextView = findViewById(R.id.tv_current_address);
         recyclerView = findViewById(R.id.recycler_hospitals);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        hospitalList = new ArrayList<>();
         adapter = new HospitalAdapter(this, hospitalList);
         recyclerView.setAdapter(adapter);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        // Setup map
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getSupportFragmentManager().findFragmentById(R.id.map_fragment);
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
-
-        locationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult result) {
-                Location location = result.getLastLocation();
-                if (location != null) {
-                    updateMapAndFetchHospitals(location);
-                }
-            }
-        };
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        // Check location permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
@@ -94,117 +91,126 @@ public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
                     LOCATION_PERMISSION_REQUEST_CODE);
         } else {
             mMap.setMyLocationEnabled(true);
-            startLocationUpdates();
+            getLastKnownLocation();
         }
     }
 
-    private void startLocationUpdates() {
-        LocationRequest request = LocationRequest.create();
-        request.setInterval(10000);
-        request.setFastestInterval(5000);
-        request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
+    // ✅ Fetch only one location and then show hospitals
+    private void getLastKnownLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            fusedLocationClient.requestLocationUpdates(request, locationCallback, null);
-        }
+                != PackageManager.PERMISSION_GRANTED) return;
+
+        fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+            if (location != null && !isLocationFetched) {
+                isLocationFetched = true; // prevent multiple updates
+                updateMapAndFetchHospitals(location);
+            } else {
+                Toast.makeText(this, "Unable to detect your location. Please enable GPS.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void updateMapAndFetchHospitals(Location location) {
-        LatLng userLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 14f));
+        double lat = location.getLatitude();
+        double lng = location.getLongitude();
+
+        LatLng userLatLng = new LatLng(lat, lng);
+        mMap.clear();
         mMap.addMarker(new MarkerOptions().position(userLatLng).title("You are here"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 14f));
 
         updateAddressTextView(location);
-        fetchNearbyHospitals(location.getLatitude(), location.getLongitude());
+        fetchNearbyHospitals(lat, lng);
     }
 
     private void updateAddressTextView(Location location) {
-        Geocoder geocoder = new Geocoder(this);
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         try {
             List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
             if (addresses != null && !addresses.isEmpty()) {
-                String address = addresses.get(0).getAddressLine(0);
-                currentAddressTextView.setText("Your Location: " + address);
+                currentAddressTextView.setText("Your Location: " + addresses.get(0).getAddressLine(0));
             } else {
                 currentAddressTextView.setText("Address not found");
             }
         } catch (Exception e) {
-            currentAddressTextView.setText("Error: " + e.getMessage());
+            currentAddressTextView.setText("Error getting address");
         }
     }
 
+    // ✅ Fetch hospitals using Google Places API
     private void fetchNearbyHospitals(double lat, double lng) {
         String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
                 + "?location=" + lat + "," + lng
-                + "&radius=10000"
+                + "&radius=5000"
                 + "&type=hospital"
+                + "&keyword=hospital"
                 + "&key=" + API_KEY;
+
+        Log.d(TAG, "Google API URL: " + url);
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
-                    hospitalList.clear();
-                    mMap.clear();
-
-                    LatLng userLatLng = new LatLng(lat, lng);
-                    mMap.addMarker(new MarkerOptions().position(userLatLng).title("You are here"));
-
                     try {
+                        hospitalList.clear();
+                        mMap.clear();
+
                         JSONArray results = response.getJSONArray("results");
+                        if (results.length() == 0) {
+                            Toast.makeText(this, "No hospitals found nearby.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        List<Hospital> tempList = new ArrayList<>();
+
                         for (int i = 0; i < results.length(); i++) {
                             JSONObject obj = results.getJSONObject(i);
-                            String name = obj.getString("name");
+                            String name = obj.optString("name", "Unknown");
                             JSONObject loc = obj.getJSONObject("geometry").getJSONObject("location");
                             double hospitalLat = loc.getDouble("lat");
                             double hospitalLng = loc.getDouble("lng");
 
+                            float[] dist = new float[1];
+                            Location.distanceBetween(lat, lng, hospitalLat, hospitalLng, dist);
+                            float distanceKm = dist[0] / 1000f;
+
+                            if (distanceKm > 5.0f) continue; // ✅ show only 5 km radius
+
+                            String distance = String.format(Locale.US, "%.1f km", distanceKm);
+                            Hospital hospital = new Hospital(name, distance, "Open", "");
+                            tempList.add(hospital);
+
+                            // Marker
                             LatLng hospitalLatLng = new LatLng(hospitalLat, hospitalLng);
                             mMap.addMarker(new MarkerOptions().position(hospitalLatLng).title(name));
-
-                            float[] resultsDistance = new float[1];
-                            Location.distanceBetween(lat, lng, hospitalLat, hospitalLng, resultsDistance);
-                            float distanceInKm = resultsDistance[0] / 1000f;
-                            String formattedDistance = String.format("%.1f km", distanceInKm);
-
-                            String status = "Status unknown";
-                            if (obj.has("opening_hours")) {
-                                JSONObject openingHours = obj.getJSONObject("opening_hours");
-                                boolean isOpen = openingHours.optBoolean("open_now", false);
-                                status = isOpen ? "Open" : "Closed";
-                            }
-
-                            hospitalList.add(new Hospital(name, formattedDistance, status));
                         }
 
+                        // ✅ Sort by distance (nearest first)
+                        Collections.sort(tempList, Comparator.comparingDouble(h -> {
+                            try {
+                                return Double.parseDouble(h.distance.replace(" km", ""));
+                            } catch (Exception e) {
+                                return 0;
+                            }
+                        }));
+
+                        hospitalList.addAll(tempList);
                         adapter.notifyDataSetChanged();
+
+                        Toast.makeText(this,
+                                hospitalList.size() + " hospitals within 5 km",
+                                Toast.LENGTH_SHORT).show();
+
                     } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(this, "Failed to parse hospital data", Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, "Parse error: " + e.getMessage());
+                        Toast.makeText(this, "Error reading data", Toast.LENGTH_SHORT).show();
                     }
                 },
-                error -> Toast.makeText(this, "Error fetching hospitals", Toast.LENGTH_SHORT).show()
-        );
+                error -> {
+                    Log.e(TAG, "API Error: " + error.getMessage());
+                    Toast.makeText(this, "Failed to load hospitals", Toast.LENGTH_SHORT).show();
+                });
 
         RequestQueue queue = Volley.newRequestQueue(this);
         queue.add(request);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE
-                && grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startLocationUpdates();
-        } else {
-            Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        fusedLocationClient.removeLocationUpdates(locationCallback);
     }
 }

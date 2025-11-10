@@ -1,7 +1,7 @@
 package com.example.habs_mainpage;
 
-import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -14,12 +14,17 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class AppointmentBookingActivity extends AppCompatActivity {
 
@@ -27,19 +32,22 @@ public class AppointmentBookingActivity extends AppCompatActivity {
     DatePicker datePicker;
     GridView gridSlots;
     EditText etReason, etPatientName, etContact;
-    RadioGroup rgConsultationType;
+    RadioGroup rgConsultationType; // Online / In-person selection
     CheckBox cbConsent;
     Button btnConfirm;
 
     String[] generatedSlots;
     String selectedSlot = null;
 
+    // Firebase references
+    DatabaseReference appointmentRef, counterRef;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.appointmentbooking);
 
-        // Bind UI
+        // --- Bind UI ---
         tvDoctorName = findViewById(R.id.tvDoctorName);
         tvSpecialization = findViewById(R.id.tvSpecialization);
         tvFee = findViewById(R.id.tvFee);
@@ -53,118 +61,177 @@ public class AppointmentBookingActivity extends AppCompatActivity {
         cbConsent = findViewById(R.id.cbConsent);
         btnConfirm = findViewById(R.id.btnConfirm);
 
-        // ❌ Past dates disable
+        // --- Prevent past dates ---
         datePicker.setMinDate(System.currentTimeMillis());
 
-        // Intent se data receive karo
-        Intent intent = getIntent();
-        String name = intent.getStringExtra("doctorName");
-        String specialization = intent.getStringExtra("specialization");
-        String fee = intent.getStringExtra("fee");
-        String timing = intent.getStringExtra("timing");
-        int consultationTime = intent.getIntExtra("consultationTime", 15);
+        // --- Firebase setup ---
+        appointmentRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app").getReference("Appointments");
+        counterRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app").getReference("AppointmentCounter");
 
-        // Doctor info set kar do
+        // --- Get doctor info from intent ---
+        String name = getIntent().getStringExtra("doctorName");
+        String specialization = getIntent().getStringExtra("specialization");
+        String fee = getIntent().getStringExtra("fee");
+        String timing = getIntent().getStringExtra("timing");
+        String avgTime = getIntent().getStringExtra("avgTime");
+
+        // --- Display info ---
         tvDoctorName.setText("Dr. " + name);
         tvSpecialization.setText("Specialization: " + specialization);
         tvFee.setText("Fee: Rs. " + fee);
         tvTiming.setText("Available: " + timing);
 
-        // Slots generate karo
-        generatedSlots = generateSlots(timing, consultationTime);
+        // --- Generate slots from timing + avgTime ---
+        generatedSlots = generateSlots(timing, avgTime);
+        if (generatedSlots.length == 0) {
+            Toast.makeText(this, "No slots available for this doctor.", Toast.LENGTH_SHORT).show();
+        }
 
-        // ✅ Custom adapter (highlight support)
+        // --- Show slots in grid ---
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.time_slot, R.id.tvSlot, generatedSlots);
         gridSlots.setAdapter(adapter);
 
-        // Slot select listener with highlight
+        // --- Slot selection ---
         gridSlots.setOnItemClickListener((adapterView, view, i, l) -> {
             selectedSlot = generatedSlots[i];
-
-            // ❌ Reset all slots
             for (int j = 0; j < adapterView.getChildCount(); j++) {
                 adapterView.getChildAt(j).setActivated(false);
             }
-
-            // ✅ Highlight selected slot
             view.setActivated(true);
-
             Toast.makeText(this, "Selected: " + selectedSlot, Toast.LENGTH_SHORT).show();
         });
 
-        // Confirm button
+        // --- Confirm button ---
         btnConfirm.setOnClickListener(v -> {
             if (!cbConsent.isChecked()) {
-                Toast.makeText(this, "Please agree to terms", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please agree to the terms", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (selectedSlot == null) {
-                Toast.makeText(this, "Please select a slot", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please select a time slot", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             String patientName = etPatientName.getText().toString().trim();
             String contact = etContact.getText().toString().trim();
+            String reason = etReason.getText().toString().trim();
 
             if (patientName.isEmpty() || contact.isEmpty()) {
                 Toast.makeText(this, "Enter patient name & contact", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Final success message
+            int selectedTypeId = rgConsultationType.getCheckedRadioButtonId();
+            if (selectedTypeId == -1) {
+                Toast.makeText(this, "Please select consultation type", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String typePrefix;
+            String appointmentType;
+            if (selectedTypeId == R.id.rbOnline) {
+                typePrefix = "O";
+                appointmentType = "Online";
+            } else {
+                typePrefix = "I";
+                appointmentType = "In-person";
+            }
+
             Calendar selectedDate = Calendar.getInstance();
             selectedDate.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
             String formattedDate = new SimpleDateFormat("dd MMM yyyy", Locale.US).format(selectedDate.getTime());
 
-            Toast.makeText(this, "Appointment booked for " + patientName +
-                    " on " + formattedDate + " at " + selectedSlot, Toast.LENGTH_LONG).show();
-
-            finish();
+            saveAppointmentToFirebase(patientName, contact, reason, name, specialization, fee, formattedDate, selectedSlot, typePrefix, appointmentType);
         });
     }
 
-    // Slots generator
-    private String[] generateSlots(String timing, int consultationMinutes) {
+    private String[] generateSlots(String timing, String avgTimeStr) {
         try {
-            String range = timing;
-
-            if (!timing.contains("-")) {
-                String t = timing.toLowerCase();
-                if (t.contains("morning")) range = "09:00 AM - 12:00 PM";
-                else if (t.contains("afternoon")) range = "12:00 PM - 04:00 PM";
-                else if (t.contains("evening")) range = "04:00 PM - 08:00 PM";
-                else return new String[0];
+            if (timing == null || !timing.contains("-")) {
+                Log.e("SlotGen", "Invalid timing: " + timing);
+                return new String[0];
             }
 
-            String[] parts = range.split("-");
+            // Fix spacing and AM/PM
+            timing = timing.replaceAll("(?i)am", " AM")
+                    .replaceAll("(?i)pm", " PM")
+                    .replaceAll("\\s*", "");
+            timing = timing.replace("-", " - ");
+
+            String[] parts = timing.split("-");
             if (parts.length < 2) return new String[0];
 
             String startStr = parts[0].trim();
             String endStr = parts[1].trim();
 
+            int consultationMinutes = 15;
+            try {
+                consultationMinutes = Integer.parseInt(avgTimeStr.replaceAll("[^0-9]", ""));
+            } catch (Exception ignored) {}
+
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.US);
+
+// Normalize timing string (adds space before AM/PM if missing)
+            startStr = startStr.toUpperCase().replace("AM", " AM").replace("PM", " PM").trim();
+            endStr = endStr.toUpperCase().replace("AM", " AM").replace("PM", " PM").trim();
+
             Date startDate = sdf.parse(startStr);
             Date endDate = sdf.parse(endStr);
 
-            long consultMs = consultationMinutes * 60L * 1000L;
-            List<String> slots = new ArrayList<>();
 
+            if (startDate == null || endDate == null) return new String[0];
+
+            List<String> slots = new ArrayList<>();
             Calendar cal = Calendar.getInstance();
             cal.setTime(startDate);
-
             Calendar calEnd = Calendar.getInstance();
             calEnd.setTime(endDate);
 
-            while (cal.getTimeInMillis() + consultMs <= calEnd.getTimeInMillis()) {
+            while (cal.getTimeInMillis() + (consultationMinutes * 60L * 1000L) <= calEnd.getTimeInMillis()) {
                 slots.add(sdf.format(cal.getTime()));
                 cal.add(Calendar.MINUTE, consultationMinutes);
             }
 
+            Log.d("SlotGen", "Slots: " + slots);
             return slots.toArray(new String[0]);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("SlotGen", "Error: " + e.getMessage());
             return new String[0];
         }
+    }
+
+    // ✅ Save appointment to Firebase
+    private void saveAppointmentToFirebase(String patientName, String contact, String reason,
+                                           String doctorName, String specialization, String fee,
+                                           String date, String slot, String typePrefix, String appointmentType) {
+
+        counterRef.get().addOnSuccessListener(snapshot -> {
+            long currentCount = snapshot.exists() ? snapshot.getValue(Long.class) : 0;
+            long newCount = currentCount + 1;
+            counterRef.setValue(newCount);
+
+            String customId = typePrefix + newCount;
+
+            Map<String, Object> appointmentData = new HashMap<>();
+            appointmentData.put("appointmentId", customId);
+            appointmentData.put("doctorName", doctorName);
+            appointmentData.put("specialization", specialization);
+            appointmentData.put("fee", fee);
+            appointmentData.put("date", date);
+            appointmentData.put("slot", slot);
+            appointmentData.put("patientName", patientName);
+            appointmentData.put("contact", contact);
+            appointmentData.put("reason", reason);
+            appointmentData.put("status", "Pending");
+            appointmentData.put("type", appointmentType);
+
+            appointmentRef.child(customId).setValue(appointmentData)
+                    .addOnSuccessListener(aVoid ->
+                            Toast.makeText(this, "✅ Appointment " + customId + " booked!", Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+        }).addOnFailureListener(e ->
+                Toast.makeText(this, "Counter fetch failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 }

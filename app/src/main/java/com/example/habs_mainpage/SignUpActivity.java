@@ -1,6 +1,5 @@
 package com.example.habs_mainpage;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
@@ -18,10 +17,13 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.jetbrains.annotations.NotNull; // ✅ Replaces androidx.annotation.NonNull
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class SignUpActivity extends AppCompatActivity {
+
     private EditText editName, editEmail, editPassword, editConfirmPassword;
     private RadioButton radioPatient, radioHospital;
     private Button btnSignup;
@@ -35,11 +37,11 @@ public class SignUpActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.signup);
 
-        // Initialize FirebaseAuth and Firestore
+        // ✅ Initialize FirebaseAuth and Firestore
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
-        // Find views
+        // ✅ Find views
         editName = findViewById(R.id.Name);
         editEmail = findViewById(R.id.email);
         editPassword = findViewById(R.id.password);
@@ -51,6 +53,7 @@ public class SignUpActivity extends AppCompatActivity {
         btnSignup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 String name = editName.getText().toString().trim();
                 String email = editEmail.getText().toString().trim();
                 String password = editPassword.getText().toString().trim();
@@ -73,15 +76,15 @@ public class SignUpActivity extends AppCompatActivity {
 
                 String role = radioPatient.isChecked() ? "Patient" : "Hospital";
 
-                // Create user with FirebaseAuth
+                // ✅ Create user with FirebaseAuth
                 mAuth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener(SignUpActivity.this, new OnCompleteListener<AuthResult>() {
                             @Override
-                            public void onComplete(@NonNull Task<AuthResult> task) {
+                            public void onComplete(@NotNull Task<AuthResult> task) {
                                 if (task.isSuccessful()) {
                                     String userId = mAuth.getCurrentUser().getUid();
 
-                                    // Save additional user info to Firestore
+                                    // ✅ Save additional user info to Firestore
                                     Map<String, Object> user = new HashMap<>();
                                     user.put("name", name);
                                     user.put("email", email);
@@ -93,14 +96,11 @@ public class SignUpActivity extends AppCompatActivity {
                                             .set(user)
                                             .addOnSuccessListener(aVoid -> {
                                                 Toast.makeText(SignUpActivity.this, "User registered as " + role, Toast.LENGTH_SHORT).show();
-                                                // After signup, directly go to MainActivity (homepage)
                                                 mAuth.signOut();
                                                 startActivity(new Intent(SignUpActivity.this, LoginActivity.class));
                                                 finish();
                                             })
-                                            .addOnFailureListener(e -> {
-                                                Toast.makeText(SignUpActivity.this, "Firestore error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                            });
+                                            .addOnFailureListener(e -> Toast.makeText(SignUpActivity.this, "Firestore error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
 
                                 } else {
                                     Toast.makeText(SignUpActivity.this, "Auth error: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();

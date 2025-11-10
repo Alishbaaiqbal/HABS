@@ -5,6 +5,7 @@
     android:orientation="vertical"
     android:background="#F7F7F7">
 
+
     <!-- Title -->
     <TextView
         android:id="@+id/tv_hospital_title"
