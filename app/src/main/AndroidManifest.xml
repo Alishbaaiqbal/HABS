@@ -58,10 +58,14 @@
         <activity
             android:name=".AppointmentBookingActivity"
             android:exported="true" />
-
+        <activity
+            android:name=".TokenGenerationActivity"
+            />
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDOvI7B1rs0ZZhDUNVNmRs83xaYtx__hX0" />
     </application>
+    <!-- Token Generatipn Page -->
+
 </manifest>

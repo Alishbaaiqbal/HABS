@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import android.content.Intent;
 
 public class AppointmentBookingActivity extends AppCompatActivity {
 
@@ -32,14 +33,13 @@ public class AppointmentBookingActivity extends AppCompatActivity {
     DatePicker datePicker;
     GridView gridSlots;
     EditText etReason, etPatientName, etContact;
-    RadioGroup rgConsultationType; // Online / In-person selection
+    RadioGroup rgConsultationType;
     CheckBox cbConsent;
     Button btnConfirm;
 
     String[] generatedSlots;
     String selectedSlot = null;
 
-    // Firebase references
     DatabaseReference appointmentRef, counterRef;
 
     @Override
@@ -47,7 +47,6 @@ public class AppointmentBookingActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.appointmentbooking);
 
-        // --- Bind UI ---
         tvDoctorName = findViewById(R.id.tvDoctorName);
         tvSpecialization = findViewById(R.id.tvSpecialization);
         tvFee = findViewById(R.id.tvFee);
@@ -61,37 +60,32 @@ public class AppointmentBookingActivity extends AppCompatActivity {
         cbConsent = findViewById(R.id.cbConsent);
         btnConfirm = findViewById(R.id.btnConfirm);
 
-        // --- Prevent past dates ---
         datePicker.setMinDate(System.currentTimeMillis());
 
-        // --- Firebase setup ---
-        appointmentRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app").getReference("Appointments");
-        counterRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app").getReference("AppointmentCounter");
+        appointmentRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
+                .getReference("Appointments");
+        counterRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
+                .getReference("AppointmentCounter");
 
-        // --- Get doctor info from intent ---
         String name = getIntent().getStringExtra("doctorName");
         String specialization = getIntent().getStringExtra("specialization");
         String fee = getIntent().getStringExtra("fee");
         String timing = getIntent().getStringExtra("timing");
         String avgTime = getIntent().getStringExtra("avgTime");
 
-        // --- Display info ---
         tvDoctorName.setText("Dr. " + name);
         tvSpecialization.setText("Specialization: " + specialization);
         tvFee.setText("Fee: Rs. " + fee);
         tvTiming.setText("Available: " + timing);
 
-        // --- Generate slots from timing + avgTime ---
         generatedSlots = generateSlots(timing, avgTime);
         if (generatedSlots.length == 0) {
             Toast.makeText(this, "No slots available for this doctor.", Toast.LENGTH_SHORT).show();
         }
 
-        // --- Show slots in grid ---
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.time_slot, R.id.tvSlot, generatedSlots);
         gridSlots.setAdapter(adapter);
 
-        // --- Slot selection ---
         gridSlots.setOnItemClickListener((adapterView, view, i, l) -> {
             selectedSlot = generatedSlots[i];
             for (int j = 0; j < adapterView.getChildCount(); j++) {
@@ -101,7 +95,6 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             Toast.makeText(this, "Selected: " + selectedSlot, Toast.LENGTH_SHORT).show();
         });
 
-        // --- Confirm button ---
         btnConfirm.setOnClickListener(v -> {
             if (!cbConsent.isChecked()) {
                 Toast.makeText(this, "Please agree to the terms", Toast.LENGTH_SHORT).show();
@@ -130,6 +123,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
 
             String typePrefix;
             String appointmentType;
+
             if (selectedTypeId == R.id.rbOnline) {
                 typePrefix = "O";
                 appointmentType = "Online";
@@ -142,7 +136,8 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             selectedDate.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
             String formattedDate = new SimpleDateFormat("dd MMM yyyy", Locale.US).format(selectedDate.getTime());
 
-            saveAppointmentToFirebase(patientName, contact, reason, name, specialization, fee, formattedDate, selectedSlot, typePrefix, appointmentType);
+            saveAppointmentToFirebase(patientName, contact, reason, name, specialization, fee,
+                    formattedDate, selectedSlot, typePrefix, appointmentType, timing);
         });
     }
 
@@ -153,7 +148,6 @@ public class AppointmentBookingActivity extends AppCompatActivity {
                 return new String[0];
             }
 
-            // Fix spacing and AM/PM
             timing = timing.replaceAll("(?i)am", " AM")
                     .replaceAll("(?i)pm", " PM")
                     .replaceAll("\\s*", "");
@@ -172,13 +166,11 @@ public class AppointmentBookingActivity extends AppCompatActivity {
 
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.US);
 
-// Normalize timing string (adds space before AM/PM if missing)
             startStr = startStr.toUpperCase().replace("AM", " AM").replace("PM", " PM").trim();
             endStr = endStr.toUpperCase().replace("AM", " AM").replace("PM", " PM").trim();
 
             Date startDate = sdf.parse(startStr);
             Date endDate = sdf.parse(endStr);
-
 
             if (startDate == null || endDate == null) return new String[0];
 
@@ -201,10 +193,41 @@ public class AppointmentBookingActivity extends AppCompatActivity {
         }
     }
 
-    // ✅ Save appointment to Firebase
+    private long combineDateAndSlotToMillis(DatePicker datePicker, String slot) {
+        try {
+            int day = datePicker.getDayOfMonth();
+            int month = datePicker.getMonth();
+            int year = datePicker.getYear();
+
+            SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.US);
+            Date time = timeFormat.parse(slot);
+
+            Calendar cal = Calendar.getInstance();
+            cal.set(year, month, day);
+
+            if (time != null) {
+                Calendar t = Calendar.getInstance();
+                t.setTime(time);
+
+                cal.set(Calendar.HOUR_OF_DAY, t.get(Calendar.HOUR_OF_DAY));
+                cal.set(Calendar.MINUTE, t.get(Calendar.MINUTE));
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND,
+                        0);
+            }
+
+            return cal.getTimeInMillis();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return System.currentTimeMillis();
+        }
+    }
+
     private void saveAppointmentToFirebase(String patientName, String contact, String reason,
                                            String doctorName, String specialization, String fee,
-                                           String date, String slot, String typePrefix, String appointmentType) {
+                                           String date, String slot, String typePrefix,
+                                           String appointmentType, String timing) {
 
         counterRef.get().addOnSuccessListener(snapshot -> {
             long currentCount = snapshot.exists() ? snapshot.getValue(Long.class) : 0;
@@ -227,11 +250,24 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             appointmentData.put("type", appointmentType);
 
             appointmentRef.child(customId).setValue(appointmentData)
-                    .addOnSuccessListener(aVoid ->
-                            Toast.makeText(this, "✅ Appointment " + customId + " booked!", Toast.LENGTH_SHORT).show())
+                    .addOnSuccessListener(aVoid -> {
+
+                        Toast.makeText(this, "✅ Appointment " + customId + " booked!", Toast.LENGTH_SHORT).show();
+
+                        try {
+                            Intent intent = new Intent(AppointmentBookingActivity.this, TokenGenerationActivity.class);
+
+                            // ✔ Only send the appointmentId (as requested)
+                            intent.putExtra("appointmentId", customId);
+
+                            startActivity(intent);
+
+                        } catch (Exception e) {
+                            Log.e("AppointmentBooking", "Failed to start TokenGenerationActivity", e);
+                        }
+                    })
                     .addOnFailureListener(e ->
                             Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-        }).addOnFailureListener(e ->
-                Toast.makeText(this, "Counter fetch failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+        });
     }
 }
