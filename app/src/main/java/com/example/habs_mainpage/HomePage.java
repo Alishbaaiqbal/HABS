@@ -79,6 +79,7 @@ public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
         }
     }
 
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;

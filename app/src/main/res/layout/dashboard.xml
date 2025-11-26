@@ -60,6 +60,9 @@
         android:layout_marginBottom="8dp"
         android:background="#DDDDDD" />
 
+    
+
+
     <!-- Hospital List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_hospitals"

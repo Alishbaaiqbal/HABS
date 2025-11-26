@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -18,54 +17,40 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HABSmainPage"
         tools:targetApi="31">
-
-        <!-- Login -->
+        <activity
+            android:name=".AppointmentTrackingActivity"
+            android:exported="false" />
         <activity
             android:name=".LoginActivity"
-            android:exported="false" />
-
-        <!-- Main Page (Launcher) -->
+            android:exported="false" /> <!-- Main Page (Launcher) -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Sign Up -->
+        </activity> <!-- Sign Up -->
         <activity
             android:name=".SignUpActivity"
-            android:exported="true" />
-
-        <!-- Login (alternative) -->
+            android:exported="true" /> <!-- Login (alternative) -->
         <activity
             android:name=".Login"
-            android:exported="true" />
-
-        <!-- Home Page -->
+            android:exported="true" /> <!-- Home Page -->
         <activity
             android:name=".HomePage"
-            android:exported="true" />
-
-        <!-- Doctor Details -->
+            android:exported="true" /> <!-- Doctor Details -->
         <activity
             android:name=".DoctorDetailsActivity"
-            android:exported="true" />
-
-        <!-- ✅ Appointment Booking Page -->
+            android:exported="true" /> <!-- ✅ Appointment Booking Page -->
         <activity
             android:name=".AppointmentBookingActivity"
             android:exported="true" />
-        <activity
-            android:name=".TokenGenerationActivity"
-            />
-        <!-- Google Maps API Key -->
+        <activity android:name=".TokenGenerationActivity" /> <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDOvI7B1rs0ZZhDUNVNmRs83xaYtx__hX0" />
     </application>
-    <!-- Token Generatipn Page -->
 
 </manifest>
