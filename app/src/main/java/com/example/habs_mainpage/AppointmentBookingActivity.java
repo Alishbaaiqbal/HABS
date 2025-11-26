@@ -1,7 +1,9 @@
 package com.example.habs_mainpage;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -17,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,28 +28,48 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import android.content.Intent;
 
+/**
+ * Modified AppointmentBookingActivity:
+ * - Generates slots based on doctor's timings and avgTime.
+ * - Creates appointment ID scoped by hospitalCode + doctorCode with O/I prefix.
+ * - Prevents double-booking: a slot (date+time) for a given hospitalCode+doctorCode can be booked only once.
+ * - Saves appointment to Firebase and creates a BookedSlots entry for quick existence check.
+ * - Navigates to TokenGenerationActivity passing appointmentId and details.
+ *
+ * Required intent extras when launching this activity:
+ *   "doctorName", "specialization", "fee", "timing", "avgTime", "hospitalName", "hospitalCode", "doctorCode"
+ *
+ */
 public class AppointmentBookingActivity extends AppCompatActivity {
+
+    private static final String TAG = "AppointmentBooking";
 
     TextView tvDoctorName, tvSpecialization, tvFee, tvTiming;
     DatePicker datePicker;
     GridView gridSlots;
     EditText etReason, etPatientName, etContact;
-    RadioGroup rgConsultationType;
+    RadioGroup rgConsultationType; // Online / In-person
     CheckBox cbConsent;
     Button btnConfirm;
 
-    String[] generatedSlots;
+    String[] generatedSlots = new String[0];
     String selectedSlot = null;
 
-    DatabaseReference appointmentRef, counterRef;
+    // Firebase reference (use your DB URL)
+    private final String FIREBASE_DB_URL = "https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app";
+    DatabaseReference appointmentRef, countersRef, bookedSlotsRefRoot;
+
+    // extras
+    String doctorName, specialization, fee, timing, avgTime;
+    String hospitalName, hospitalCode, doctorCode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.appointmentbooking);
 
+        // Bind UI
         tvDoctorName = findViewById(R.id.tvDoctorName);
         tvSpecialization = findViewById(R.id.tvSpecialization);
         tvFee = findViewById(R.id.tvFee);
@@ -60,34 +83,59 @@ public class AppointmentBookingActivity extends AppCompatActivity {
         cbConsent = findViewById(R.id.cbConsent);
         btnConfirm = findViewById(R.id.btnConfirm);
 
+        // Prevent past dates
         datePicker.setMinDate(System.currentTimeMillis());
 
-        appointmentRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
-                .getReference("Appointments");
-        counterRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
-                .getReference("AppointmentCounter");
+        // Firebase references (explicit DB URL to avoid region mismatch)
+        appointmentRef = FirebaseDatabase.getInstance(FIREBASE_DB_URL).getReference("Appointments");
+        countersRef = FirebaseDatabase.getInstance(FIREBASE_DB_URL).getReference("AppointmentCounters");
+        bookedSlotsRefRoot = FirebaseDatabase.getInstance(FIREBASE_DB_URL).getReference("BookedSlots");
 
-        String name = getIntent().getStringExtra("doctorName");
-        String specialization = getIntent().getStringExtra("specialization");
-        String fee = getIntent().getStringExtra("fee");
-        String timing = getIntent().getStringExtra("timing");
-        String avgTime = getIntent().getStringExtra("avgTime");
+        // Get details passed from previous activity (DoctorDetails)
+        doctorName = getIntent().getStringExtra("doctorName");
+        specialization = getIntent().getStringExtra("specialization");
+        fee = getIntent().getStringExtra("fee");
+        timing = getIntent().getStringExtra("timing");         // e.g. "7:00pm-9:00pm"
+        avgTime = getIntent().getStringExtra("avgTime");       // e.g. "15" or "15 mins"
+        hospitalName = getIntent().getStringExtra("hospitalName");
+        hospitalCode = getIntent().getStringExtra("hospitalCode");
+        doctorCode = getIntent().getStringExtra("doctorCode");
 
-        tvDoctorName.setText("Dr. " + name);
+        // Fallbacks
+        if (doctorName == null) doctorName = "Unknown";
+        if (specialization == null) specialization = "General";
+        if (fee == null) fee = "0";
+        if (timing == null) timing = "";
+        if (avgTime == null) avgTime = "15";
+        if (hospitalName == null) hospitalName = "General Hospital";
+
+        // If codes are missing, derive simple sanitized codes (not collision-safe for production)
+        if (hospitalCode == null || hospitalCode.isEmpty()) {
+            hospitalCode = sanitizeCode(hospitalName);
+        }
+        if (doctorCode == null || doctorCode.isEmpty()) {
+            doctorCode = sanitizeCode(doctorName);
+        }
+
+        // Show doctor info
+        tvDoctorName.setText("Dr. " + doctorName);
         tvSpecialization.setText("Specialization: " + specialization);
         tvFee.setText("Fee: Rs. " + fee);
-        tvTiming.setText("Available: " + timing);
+        tvTiming.setText("Available: " + (timing.isEmpty() ? "Not specified" : timing));
 
-        generatedSlots = generateSlots(timing, avgTime);
+        // Generate slots from timings and avgTime (avgTime in minutes)
+        generatedSlots = generateSlotsFromTiming(timing, avgTime);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.time_slot, R.id.tvSlot, generatedSlots);
+        gridSlots.setAdapter(adapter);
+
         if (generatedSlots.length == 0) {
             Toast.makeText(this, "No slots available for this doctor.", Toast.LENGTH_SHORT).show();
         }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.time_slot, R.id.tvSlot, generatedSlots);
-        gridSlots.setAdapter(adapter);
-
+        // Slot selection
         gridSlots.setOnItemClickListener((adapterView, view, i, l) -> {
             selectedSlot = generatedSlots[i];
+            // highlight selected view
             for (int j = 0; j < adapterView.getChildCount(); j++) {
                 adapterView.getChildAt(j).setActivated(false);
             }
@@ -95,21 +143,19 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             Toast.makeText(this, "Selected: " + selectedSlot, Toast.LENGTH_SHORT).show();
         });
 
+        // Confirm click -> save appointment and go to TokenGenerationActivity
         btnConfirm.setOnClickListener(v -> {
             if (!cbConsent.isChecked()) {
-                Toast.makeText(this, "Please agree to the terms", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please agree to the terms.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             if (selectedSlot == null) {
-                Toast.makeText(this, "Please select a time slot", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please select a time slot.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             String patientName = etPatientName.getText().toString().trim();
             String contact = etContact.getText().toString().trim();
             String reason = etReason.getText().toString().trim();
-
             if (patientName.isEmpty() || contact.isEmpty()) {
                 Toast.makeText(this, "Enter patient name & contact", Toast.LENGTH_SHORT).show();
                 return;
@@ -117,157 +163,223 @@ public class AppointmentBookingActivity extends AppCompatActivity {
 
             int selectedTypeId = rgConsultationType.getCheckedRadioButtonId();
             if (selectedTypeId == -1) {
-                Toast.makeText(this, "Please select consultation type", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Select consultation type (Online/In-person).", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            String typePrefix;
-            String appointmentType;
+            String typePrefix = (selectedTypeId == R.id.rbOnline) ? "O" : "I";
+            String appointmentType = (selectedTypeId == R.id.rbOnline) ? "Online" : "In-person";
 
-            if (selectedTypeId == R.id.rbOnline) {
-                typePrefix = "O";
-                appointmentType = "Online";
-            } else {
-                typePrefix = "I";
-                appointmentType = "In-person";
-            }
+            // Compose date string
+            Calendar selDate = Calendar.getInstance();
+            selDate.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
+            String formattedDate = new SimpleDateFormat("dd MMM yyyy", Locale.US).format(selDate.getTime());
 
-            Calendar selectedDate = Calendar.getInstance();
-            selectedDate.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
-            String formattedDate = new SimpleDateFormat("dd MMM yyyy", Locale.US).format(selectedDate.getTime());
+            // Disable button while saving
+            btnConfirm.setEnabled(false);
+            btnConfirm.setText("Booking...");
 
-            saveAppointmentToFirebase(patientName, contact, reason, name, specialization, fee,
-                    formattedDate, selectedSlot, typePrefix, appointmentType, timing);
+            // Check if slot already booked for this doctor on this date (regardless of online/in-person)
+            String slotKey = slotToKey(selectedSlot);
+            DatabaseReference checkRef = bookedSlotsRefRoot
+                    .child(hospitalCode)
+                    .child(doctorCode)
+                    .child(formattedDate)
+                    .child(slotKey);
+
+            checkRef.get().addOnSuccessListener(snapshot -> {
+                if (snapshot.exists()) {
+                    // Slot already taken
+                    Toast.makeText(AppointmentBookingActivity.this,
+                            "Slot already booked. Please choose another slot.", Toast.LENGTH_LONG).show();
+                    btnConfirm.setEnabled(true);
+                    btnConfirm.setText("Confirm Appointment");
+                } else {
+                    // Not booked -> proceed to reserve and save appointment
+                    reserveAndSaveAppointment(typePrefix, appointmentType, patientName, contact, reason, formattedDate, selectedSlot, slotKey);
+                }
+            }).addOnFailureListener(e -> {
+                Toast.makeText(AppointmentBookingActivity.this,
+                        "Failed to check slot availability: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                btnConfirm.setEnabled(true);
+                btnConfirm.setText("Confirm Appointment");
+            });
         });
     }
 
-    private String[] generateSlots(String timing, String avgTimeStr) {
-        try {
-            if (timing == null || !timing.contains("-")) {
-                Log.e("SlotGen", "Invalid timing: " + timing);
-                return new String[0];
-            }
+    private void reserveAndSaveAppointment(String typePrefix, String appointmentType,
+                                           String patientName, String contact, String reason,
+                                           String formattedDate, String selectedSlot, String slotKey) {
+        // Use a per-hospital-per-doctor counter to create friendly sequential IDs
+        DatabaseReference thisCounterRef = countersRef.child(hospitalCode).child(doctorCode);
 
-            timing = timing.replaceAll("(?i)am", " AM")
-                    .replaceAll("(?i)pm", " PM")
-                    .replaceAll("\\s*", "");
-            timing = timing.replace("-", " - ");
-
-            String[] parts = timing.split("-");
-            if (parts.length < 2) return new String[0];
-
-            String startStr = parts[0].trim();
-            String endStr = parts[1].trim();
-
-            int consultationMinutes = 15;
+        thisCounterRef.get().addOnSuccessListener(counterSnap -> {
+            long current = 0;
             try {
-                consultationMinutes = Integer.parseInt(avgTimeStr.replaceAll("[^0-9]", ""));
-            } catch (Exception ignored) {}
-
-            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.US);
-
-            startStr = startStr.toUpperCase().replace("AM", " AM").replace("PM", " PM").trim();
-            endStr = endStr.toUpperCase().replace("AM", " AM").replace("PM", " PM").trim();
-
-            Date startDate = sdf.parse(startStr);
-            Date endDate = sdf.parse(endStr);
-
-            if (startDate == null || endDate == null) return new String[0];
-
-            List<String> slots = new ArrayList<>();
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(startDate);
-            Calendar calEnd = Calendar.getInstance();
-            calEnd.setTime(endDate);
-
-            while (cal.getTimeInMillis() + (consultationMinutes * 60L * 1000L) <= calEnd.getTimeInMillis()) {
-                slots.add(sdf.format(cal.getTime()));
-                cal.add(Calendar.MINUTE, consultationMinutes);
+                if (counterSnap.exists()) {
+                    Object val = counterSnap.getValue();
+                    if (val instanceof Long) current = (Long) val;
+                    else if (val instanceof Integer) current = ((Integer) val);
+                    else current = Long.parseLong(String.valueOf(val));
+                }
+            } catch (Exception e) {
+                current = 0;
             }
+            long newCounter = current + 1;
+            // Update counter
+            thisCounterRef.setValue(newCounter);
 
-            Log.d("SlotGen", "Slots: " + slots);
-            return slots.toArray(new String[0]);
-        } catch (Exception e) {
-            Log.e("SlotGen", "Error: " + e.getMessage());
-            return new String[0];
-        }
-    }
-
-    private long combineDateAndSlotToMillis(DatePicker datePicker, String slot) {
-        try {
-            int day = datePicker.getDayOfMonth();
-            int month = datePicker.getMonth();
-            int year = datePicker.getYear();
-
-            SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.US);
-            Date time = timeFormat.parse(slot);
-
-            Calendar cal = Calendar.getInstance();
-            cal.set(year, month, day);
-
-            if (time != null) {
-                Calendar t = Calendar.getInstance();
-                t.setTime(time);
-
-                cal.set(Calendar.HOUR_OF_DAY, t.get(Calendar.HOUR_OF_DAY));
-                cal.set(Calendar.MINUTE, t.get(Calendar.MINUTE));
-                cal.set(Calendar.SECOND, 0);
-                cal.set(Calendar.MILLISECOND,
-                        0);
-            }
-
-            return cal.getTimeInMillis();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return System.currentTimeMillis();
-        }
-    }
-
-    private void saveAppointmentToFirebase(String patientName, String contact, String reason,
-                                           String doctorName, String specialization, String fee,
-                                           String date, String slot, String typePrefix,
-                                           String appointmentType, String timing) {
-
-        counterRef.get().addOnSuccessListener(snapshot -> {
-            long currentCount = snapshot.exists() ? snapshot.getValue(Long.class) : 0;
-            long newCount = currentCount + 1;
-            counterRef.setValue(newCount);
-
-            String customId = typePrefix + newCount;
+            String appointmentId = typePrefix + "-" + shortCode(hospitalCode) + "-" + shortCode(doctorCode) + "-" + newCounter;
 
             Map<String, Object> appointmentData = new HashMap<>();
-            appointmentData.put("appointmentId", customId);
+            appointmentData.put("appointmentId", appointmentId);
             appointmentData.put("doctorName", doctorName);
+            appointmentData.put("hospitalName", hospitalName);
             appointmentData.put("specialization", specialization);
             appointmentData.put("fee", fee);
-            appointmentData.put("date", date);
-            appointmentData.put("slot", slot);
+            appointmentData.put("date", formattedDate);
+            appointmentData.put("slot", selectedSlot);
             appointmentData.put("patientName", patientName);
             appointmentData.put("contact", contact);
             appointmentData.put("reason", reason);
             appointmentData.put("status", "Pending");
             appointmentData.put("type", appointmentType);
+            appointmentData.put("hospitalCode", hospitalCode);
+            appointmentData.put("doctorCode", doctorCode);
 
-            appointmentRef.child(customId).setValue(appointmentData)
+            // Prepare booked slot ref to mark this slot as occupied
+            DatabaseReference slotRef = bookedSlotsRefRoot
+                    .child(hospitalCode)
+                    .child(doctorCode)
+                    .child(formattedDate)
+                    .child(slotKey);
+
+            // First write appointment, then mark slot (order not strictly atomic here).
+            // Could write both using a multi-location update if required.
+            appointmentRef.child(appointmentId).setValue(appointmentData)
                     .addOnSuccessListener(aVoid -> {
+                        // mark slot
+                        slotRef.setValue(appointmentId).addOnSuccessListener(aVoid2 -> {
+                            Toast.makeText(AppointmentBookingActivity.this,
+                                    "✅ Appointment " + appointmentId + " booked!", Toast.LENGTH_SHORT).show();
 
-                        Toast.makeText(this, "✅ Appointment " + customId + " booked!", Toast.LENGTH_SHORT).show();
-
-                        try {
+                            // Start TokenGenerationActivity with necessary extras
                             Intent intent = new Intent(AppointmentBookingActivity.this, TokenGenerationActivity.class);
-
-                            // ✔ Only send the appointmentId (as requested)
-                            intent.putExtra("appointmentId", customId);
-
+                            intent.putExtra("appointmentId", appointmentId);
+                            intent.putExtra("doctorName", doctorName);
+                            intent.putExtra("hospitalName", hospitalName);
+                            intent.putExtra("date", formattedDate);
+                            intent.putExtra("slot", selectedSlot);
+                            intent.putExtra("type", appointmentType);
                             startActivity(intent);
 
-                        } catch (Exception e) {
-                            Log.e("AppointmentBooking", "Failed to start TokenGenerationActivity", e);
-                        }
+                            // re-enable and finish
+                            btnConfirm.setEnabled(true);
+                            btnConfirm.setText("Confirm Appointment");
+                            finish();
+                        }).addOnFailureListener(e -> {
+                            // slot marking failed - show message but appointment exists; you may want to rollback or handle conflict
+                            Toast.makeText(AppointmentBookingActivity.this,
+                                    "Saved appointment but failed to reserve slot: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            btnConfirm.setEnabled(true);
+                            btnConfirm.setText("Confirm Appointment");
+                        });
                     })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(AppointmentBookingActivity.this,
+                                "Failed to save appointment: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        btnConfirm.setEnabled(true);
+                        btnConfirm.setText("Confirm Appointment");
+                    });
+
+        }).addOnFailureListener(e -> {
+            Toast.makeText(AppointmentBookingActivity.this,
+                    "Failed to get counter: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            btnConfirm.setEnabled(true);
+            btnConfirm.setText("Confirm Appointment");
         });
+    }
+
+    /**
+     * Generate slots from doctor timing string and avgTime.
+     * timing examples: "7:00pm-9:00pm", "09:00 AM - 12:00 PM", "9:00am-11:30am"
+     */
+    private String[] generateSlotsFromTiming(String timing, String avgTimeStr) {
+        try {
+            if (timing == null || timing.trim().isEmpty()) return new String[0];
+
+            // Normalize: remove spaces then ensure format like "7:00PM-9:00PM"
+            String t = timing.trim().replaceAll("\\s+", "");
+            // Insert space before am/pm
+            t = t.replaceAll("(?i)(am|pm)", " $1");
+            // Ensure we have hyphen separating start-end (it should)
+            String[] parts = t.split("-");
+            if (parts.length < 2) return new String[0];
+
+            String startRaw = parts[0].trim();
+            String endRaw = parts[1].trim();
+
+            // Parse consultation minutes from avgTimeStr (e.g. "15", "15 mins")
+            int consultMins = 15;
+            try {
+                consultMins = Integer.parseInt(avgTimeStr.replaceAll("[^0-9]", ""));
+                if (consultMins <= 0) consultMins = 15;
+            } catch (Exception ignored) {
+            }
+
+            SimpleDateFormat fmt = new SimpleDateFormat("h:mm a", Locale.US);
+
+            startRaw = startRaw.toUpperCase();
+            endRaw = endRaw.toUpperCase();
+
+            // Add :00 if missing
+            if (!startRaw.contains(":")) startRaw = startRaw.replaceAll("^(\\d+)(\\s*AM|\\s*PM)$", "$1:00$2");
+            if (!endRaw.contains(":")) endRaw = endRaw.replaceAll("^(\\d+)(\\s*AM|\\s*PM)$", "$1:00$2");
+
+            Date start = fmt.parse(startRaw);
+            Date end = fmt.parse(endRaw);
+
+            if (start == null || end == null) return new String[0];
+
+            Calendar c = Calendar.getInstance();
+            c.setTime(start);
+            Calendar cEnd = Calendar.getInstance();
+            cEnd.setTime(end);
+
+            List<String> slots = new ArrayList<>();
+            while (c.getTimeInMillis() + consultMins * 60L * 1000L <= cEnd.getTimeInMillis()) {
+                slots.add(fmt.format(c.getTime()));
+                c.add(Calendar.MINUTE, consultMins);
+            }
+
+            Log.d(TAG, "Generated slots for timing=" + timing + " slots=" + slots);
+            return slots.toArray(new String[0]);
+
+        } catch (ParseException pe) {
+            Log.e(TAG, "SlotGen Parse Error: " + pe.getMessage());
+            return new String[0];
+        } catch (Exception e) {
+            Log.e(TAG, "SlotGen Error: " + e.getMessage());
+            return new String[0];
+        }
+    }
+
+    // Convert a slot string into a safe key for Firebase child (replace non-alphanum)
+    private String slotToKey(String slot) {
+        if (slot == null) return "slot_unknown";
+        return slot.replaceAll("[^A-Za-z0-9]", "_");
+    }
+
+    // Short helper to create a simple code (remove spaces and non-alphanum)
+    private String sanitizeCode(String s) {
+        if (s == null) return "X";
+        return s.toLowerCase().replaceAll("[^a-z0-9]", "");
+    }
+
+    // produce short uppercase code for nicer ID
+    private String shortCode(String s) {
+        String cleaned = sanitizeCode(s);
+        if (cleaned.length() <= 4) return cleaned.toUpperCase();
+        return cleaned.substring(0, Math.min(4, cleaned.length())).toUpperCase();
     }
 }
