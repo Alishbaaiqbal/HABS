@@ -2,7 +2,6 @@ package com.example.habs_mainpage;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,9 +17,19 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
     private final Context context;
     private final List<Doctor> doctorList;
 
-    public DoctorAdapter(Context context, List<Doctor> doctorList) {
+    // 🔹 NEW: we also keep hospital info in the adapter
+    private final String hospitalName;
+    private final String hospitalUniqueId;
+
+    // 🔹 UPDATED CONSTRUCTOR
+    public DoctorAdapter(Context context,
+                         List<Doctor> doctorList,
+                         String hospitalName,
+                         String hospitalUniqueId) {
         this.context = context;
         this.doctorList = doctorList;
+        this.hospitalName = hospitalName;
+        this.hospitalUniqueId = hospitalUniqueId;
     }
 
     @Override
@@ -61,6 +70,13 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
             String avgTime = doctor.getAvgTime(); // e.g. "15 mins"
             intent.putExtra("avgTime", avgTime);
 
+            // 🔹 VERY IMPORTANT: pass hospital info to AppointmentBookingActivity
+            intent.putExtra("hospitalName", hospitalName);
+            intent.putExtra("hospitalUniqueId", hospitalUniqueId);  // 👈 yahi se unique hospitalCode banega
+
+            // doctorCode optional hai – agar nahi bheja to AppointmentBookingActivity khud name se bana lega
+            // intent.putExtra("doctorCode", someDoctorCode);  // optional
+
             context.startActivity(intent);
         });
 
@@ -87,7 +103,7 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
             avgTime = itemView.findViewById(R.id.tv_avg_time);
             waitTime = itemView.findViewById(R.id.tv_wait_time);
             fee = itemView.findViewById(R.id.tv_fee);
-            timing = itemView.findViewById(R.id.tv_timing); // ✅ added
+            timing = itemView.findViewById(R.id.tv_timing);
             btnBook = itemView.findViewById(R.id.btn_book);
         }
     }

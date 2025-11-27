@@ -52,18 +52,28 @@ public class HospitalAdapter extends RecyclerView.Adapter<HospitalAdapter.Hospit
             holder.status.setTextColor(Color.parseColor("#000000"));
         }
 
-        // ✅ When hospital card is clicked — open DoctorDetailsActivity
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, DoctorDetailsActivity.class);
+
+            // 👀 1) Display name for UI (jo tum already sahi bhej rahi ho)
             intent.putExtra("hospital_name", hospital.name);
 
-            // Optional: if firebaseId exists, include it
+            // 👀 2) INTERNAL UNIQUE ID for logic
+            //    - If firebaseId available → best option
+            //    - Warna hospital name se fallback
+            String uniqueId;
             if (hospital.firebaseId != null && !hospital.firebaseId.isEmpty()) {
-                intent.putExtra("hospitalId", hospital.firebaseId);
+                uniqueId = hospital.firebaseId;
+            } else {
+                uniqueId = hospital.name;   // fallback (only safe if names are unique)
             }
+
+            // yahi woh key hai jo DoctorDetailsActivity + AppointmentBookingActivity use kareinge
+            intent.putExtra("hospital_unique_id", uniqueId);
 
             context.startActivity(intent);
         });
+
     }
 
     @Override

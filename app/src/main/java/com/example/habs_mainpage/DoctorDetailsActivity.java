@@ -22,7 +22,9 @@ public class DoctorDetailsActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private DoctorAdapter adapter;
     private final List<Doctor> doctorList = new ArrayList<>();
+
     private String hospitalName;
+    private String hospitalUniqueId;   // 🔹 NEW: internal unique id per hospital
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,14 +34,20 @@ public class DoctorDetailsActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_doctors);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        adapter = new DoctorAdapter(this, doctorList);
-        recyclerView.setAdapter(adapter);
-
+        // 🔹 Read hospital info from Intent
         hospitalName = getIntent().getStringExtra("hospital_name");
         if (hospitalName == null || hospitalName.isEmpty()) {
             hospitalName = "General Hospital";
         }
 
+        // 🔹 Try to get a unique id from previous screen (e.g. placeId or lat_lng)
+        //     If not provided, we fallback to hospitalName (works if names are unique)
+        hospitalUniqueId = getIntent().getStringExtra("hospital_unique_id");
+        if (hospitalUniqueId == null || hospitalUniqueId.isEmpty()) {
+            hospitalUniqueId = hospitalName;
+        }
+
+        // 🔹 Load doctors for this hospital name from JSON
         loadDoctorsFromJSON(hospitalName);
     }
 
@@ -70,7 +78,7 @@ public class DoctorDetailsActivity extends AppCompatActivity {
                             obj.optString("Avg Time to Patients(mins)", ""),
                             obj.optString("Wait Time(mins)", ""),
                             obj.optString("Fee(PKR)", ""),
-                            obj.optString("Timing", obj.optString("Timings", "")) // ✅ handles both
+                            obj.optString("Timing", obj.optString("Timings", "")) // ✅ handles both "Timing" & "Timings"
                     ));
                 }
             } else if (rootObject.has("General Hospital")) {
@@ -97,6 +105,14 @@ public class DoctorDetailsActivity extends AppCompatActivity {
                 Toast.makeText(this, "No matching hospital found in JSON.", Toast.LENGTH_SHORT).show();
             }
 
+            // 🔹 Now that doctorList is filled, create adapter with hospital info
+            adapter = new DoctorAdapter(
+                    this,
+                    doctorList,
+                    hospitalName,
+                    hospitalUniqueId   // 👈 yahi unique id AppointmentBookingActivity tak jayegi
+            );
+            recyclerView.setAdapter(adapter);
             adapter.notifyDataSetChanged();
 
         } catch (Exception e) {
@@ -148,6 +164,9 @@ public class DoctorDetailsActivity extends AppCompatActivity {
 
     private String cleanName(String name) {
         return name == null ? "" :
-                name.toLowerCase().replaceAll("[^a-z0-9\\s]", "").replaceAll("\\s+", " ").trim();
+                name.toLowerCase()
+                        .replaceAll("[^a-z0-9\\s]", "")
+                        .replaceAll("\\s+", " ")
+                        .trim();
     }
 }

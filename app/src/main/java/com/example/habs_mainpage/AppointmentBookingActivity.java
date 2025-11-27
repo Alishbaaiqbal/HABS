@@ -30,16 +30,22 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Modified AppointmentBookingActivity:
+ * AppointmentBookingActivity:
  * - Generates slots based on doctor's timings and avgTime.
  * - Creates appointment ID scoped by hospitalCode + doctorCode with O/I prefix.
  * - Prevents double-booking: a slot (date+time) for a given hospitalCode+doctorCode can be booked only once.
  * - Saves appointment to Firebase and creates a BookedSlots entry for quick existence check.
  * - Navigates to TokenGenerationActivity passing appointmentId and details.
  *
- * Required intent extras when launching this activity:
- *   "doctorName", "specialization", "fee", "timing", "avgTime", "hospitalName", "hospitalCode", "doctorCode"
+ * Expected intent extras when launching this activity:
+ *   REQUIRED (for proper display):
+ *     "doctorName", "specialization", "fee", "timing", "avgTime", "hospitalName"
  *
+ *   RECOMMENDED (for proper unique slot logic):
+ *     "hospitalUniqueId" → unique ID per physical hospital (e.g. placeId or lat_lng)
+ *     "doctorCode"       → optional; if missing it will be derived from doctorName
+ *
+ *   If "hospitalUniqueId" is missing, hospitalName will be used as fallback.
  */
 public class AppointmentBookingActivity extends AppCompatActivity {
 
@@ -62,7 +68,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
 
     // extras
     String doctorName, specialization, fee, timing, avgTime;
-    String hospitalName, hospitalCode, doctorCode;
+    String hospitalName, hospitalCode, hospitalUniqueId, doctorCode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,39 +97,56 @@ public class AppointmentBookingActivity extends AppCompatActivity {
         countersRef = FirebaseDatabase.getInstance(FIREBASE_DB_URL).getReference("AppointmentCounters");
         bookedSlotsRefRoot = FirebaseDatabase.getInstance(FIREBASE_DB_URL).getReference("BookedSlots");
 
-        // Get details passed from previous activity (DoctorDetails)
-        doctorName = getIntent().getStringExtra("doctorName");
-        specialization = getIntent().getStringExtra("specialization");
-        fee = getIntent().getStringExtra("fee");
-        timing = getIntent().getStringExtra("timing");         // e.g. "7:00pm-9:00pm"
-        avgTime = getIntent().getStringExtra("avgTime");       // e.g. "15" or "15 mins"
-        hospitalName = getIntent().getStringExtra("hospitalName");
-        hospitalCode = getIntent().getStringExtra("hospitalCode");
-        doctorCode = getIntent().getStringExtra("doctorCode");
+        // ---------- READ EXTRAS ----------
+        doctorName       = getIntent().getStringExtra("doctorName");
+        specialization   = getIntent().getStringExtra("specialization");
+        fee              = getIntent().getStringExtra("fee");
+        timing           = getIntent().getStringExtra("timing");          // e.g. "7:00pm-9:00pm"
+        avgTime          = getIntent().getStringExtra("avgTime");         // e.g. "15" or "15 mins"
+        hospitalName     = getIntent().getStringExtra("hospitalName");
+        hospitalUniqueId = getIntent().getStringExtra("hospitalUniqueId"); // NEW: internal unique ID
+        doctorCode       = getIntent().getStringExtra("doctorCode");
 
-        // Fallbacks
+        // ---------- FALLBACKS ----------
         if (doctorName == null) doctorName = "Unknown";
         if (specialization == null) specialization = "General";
         if (fee == null) fee = "0";
         if (timing == null) timing = "";
         if (avgTime == null) avgTime = "15";
-        if (hospitalName == null) hospitalName = "General Hospital";
 
-        // If codes are missing, derive simple sanitized codes (not collision-safe for production)
-        if (hospitalCode == null || hospitalCode.isEmpty()) {
-            hospitalCode = sanitizeCode(hospitalName);
+        // Display name (what user sees)
+        if (hospitalName == null || hospitalName.trim().isEmpty()) {
+            hospitalName = "General Hospital";
         }
+
+        // Internal UNIQUE ID (what booking logic uses)
+        // For dataset hospitals: you should pass hospitalUniqueId = real hospital name or ID.
+        // For unknown/general hospitals: you should pass hospitalUniqueId = placeId or lat_lng from Maps.
+        if (hospitalUniqueId == null || hospitalUniqueId.trim().isEmpty()) {
+            // fallback: treat hospitalName as unique id (will group same-name hospitals together)
+            hospitalUniqueId = hospitalName;
+        }
+
+        // Now hospitalCode ALWAYS comes from the unique ID, not from display name
+        hospitalCode = sanitizeCode(hospitalUniqueId);
+
+        // Doctor code: if not sent, derive from doctorName
         if (doctorCode == null || doctorCode.isEmpty()) {
             doctorCode = sanitizeCode(doctorName);
         }
 
-        // Show doctor info
+        Log.d(TAG, "onCreate: hospitalName=" + hospitalName
+                + ", hospitalUniqueId=" + hospitalUniqueId
+                + ", hospitalCode=" + hospitalCode
+                + ", doctorCode=" + doctorCode);
+
+        // ---------- SHOW DOCTOR INFO ----------
         tvDoctorName.setText("Dr. " + doctorName);
         tvSpecialization.setText("Specialization: " + specialization);
         tvFee.setText("Fee: Rs. " + fee);
         tvTiming.setText("Available: " + (timing.isEmpty() ? "Not specified" : timing));
 
-        // Generate slots from timings and avgTime (avgTime in minutes)
+        // ---------- GENERATE SLOTS ----------
         generatedSlots = generateSlotsFromTiming(timing, avgTime);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.time_slot, R.id.tvSlot, generatedSlots);
         gridSlots.setAdapter(adapter);
@@ -143,7 +166,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             Toast.makeText(this, "Selected: " + selectedSlot, Toast.LENGTH_SHORT).show();
         });
 
-        // Confirm click -> save appointment and go to TokenGenerationActivity
+        // ---------- CONFIRM BUTTON ----------
         btnConfirm.setOnClickListener(v -> {
             if (!cbConsent.isChecked()) {
                 Toast.makeText(this, "Please agree to the terms.", Toast.LENGTH_SHORT).show();
@@ -179,7 +202,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             btnConfirm.setEnabled(false);
             btnConfirm.setText("Booking...");
 
-            // Check if slot already booked for this doctor on this date (regardless of online/in-person)
+            // Check if slot already booked for this doctor in THIS HOSPITAL on THIS DATE
             String slotKey = slotToKey(selectedSlot);
             DatabaseReference checkRef = bookedSlotsRefRoot
                     .child(hospitalCode)
@@ -189,14 +212,16 @@ public class AppointmentBookingActivity extends AppCompatActivity {
 
             checkRef.get().addOnSuccessListener(snapshot -> {
                 if (snapshot.exists()) {
-                    // Slot already taken
+                    // Slot already taken in this hospital
                     Toast.makeText(AppointmentBookingActivity.this,
-                            "Slot already booked. Please choose another slot.", Toast.LENGTH_LONG).show();
+                            "Slot already booked in this hospital. Please choose another slot.",
+                            Toast.LENGTH_LONG).show();
                     btnConfirm.setEnabled(true);
                     btnConfirm.setText("Confirm Appointment");
                 } else {
                     // Not booked -> proceed to reserve and save appointment
-                    reserveAndSaveAppointment(typePrefix, appointmentType, patientName, contact, reason, formattedDate, selectedSlot, slotKey);
+                    reserveAndSaveAppointment(typePrefix, appointmentType, patientName, contact, reason,
+                            formattedDate, selectedSlot, slotKey);
                 }
             }).addOnFailureListener(e -> {
                 Toast.makeText(AppointmentBookingActivity.this,
@@ -210,6 +235,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
     private void reserveAndSaveAppointment(String typePrefix, String appointmentType,
                                            String patientName, String contact, String reason,
                                            String formattedDate, String selectedSlot, String slotKey) {
+
         // Use a per-hospital-per-doctor counter to create friendly sequential IDs
         DatabaseReference thisCounterRef = countersRef.child(hospitalCode).child(doctorCode);
 
@@ -254,8 +280,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
                     .child(formattedDate)
                     .child(slotKey);
 
-            // First write appointment, then mark slot (order not strictly atomic here).
-            // Could write both using a multi-location update if required.
+            // First write appointment, then mark slot
             appointmentRef.child(appointmentId).setValue(appointmentData)
                     .addOnSuccessListener(aVoid -> {
                         // mark slot
@@ -278,9 +303,9 @@ public class AppointmentBookingActivity extends AppCompatActivity {
                             btnConfirm.setText("Confirm Appointment");
                             finish();
                         }).addOnFailureListener(e -> {
-                            // slot marking failed - show message but appointment exists; you may want to rollback or handle conflict
                             Toast.makeText(AppointmentBookingActivity.this,
-                                    "Saved appointment but failed to reserve slot: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                    "Saved appointment but failed to reserve slot: " + e.getMessage(),
+                                    Toast.LENGTH_LONG).show();
                             btnConfirm.setEnabled(true);
                             btnConfirm.setText("Confirm Appointment");
                         });
@@ -333,8 +358,10 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             endRaw = endRaw.toUpperCase();
 
             // Add :00 if missing
-            if (!startRaw.contains(":")) startRaw = startRaw.replaceAll("^(\\d+)(\\s*AM|\\s*PM)$", "$1:00$2");
-            if (!endRaw.contains(":")) endRaw = endRaw.replaceAll("^(\\d+)(\\s*AM|\\s*PM)$", "$1:00$2");
+            if (!startRaw.contains(":"))
+                startRaw = startRaw.replaceAll("^(\\d+)(\\s*AM|\\s*PM)$", "$1:00$2");
+            if (!endRaw.contains(":"))
+                endRaw = endRaw.replaceAll("^(\\d+)(\\s*AM|\\s*PM)$", "$1:00$2");
 
             Date start = fmt.parse(startRaw);
             Date end = fmt.parse(endRaw);
