@@ -87,18 +87,19 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_specialization" />
 
-        <!-- Divider -->
+        <!-- Info Grid Container -->
+
         <View
             android:id="@+id/divider"
             android:layout_width="0dp"
             android:layout_height="1dp"
+            android:layout_marginTop="20dp"
             android:background="#F0F0F0"
-            android:layout_marginTop="16dp"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/card_avatar" />
 
-        <!-- Info Grid Container -->
         <LinearLayout
             android:id="@+id/info_container"
             android:layout_width="0dp"

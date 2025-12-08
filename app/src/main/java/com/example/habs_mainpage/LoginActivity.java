@@ -20,12 +20,10 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Objects;
 
-
-
 public class LoginActivity extends AppCompatActivity {
 
     EditText editTextEmail, editTextPASSWORD;
-    Button buttonLogin, btnGoToSignUp;
+    Button buttonLogin;   // ← Signup removed
     FirebaseAuth mAuth;
     ProgressBar progressBar;
     TextView textView; // Forgot Password TextView
@@ -53,14 +51,13 @@ public class LoginActivity extends AppCompatActivity {
         editTextEmail = findViewById(R.id.Email);
         editTextPASSWORD = findViewById(R.id.PASSWORD);
         buttonLogin = findViewById(R.id.btn_login);
-        btnGoToSignUp = findViewById(R.id.btn_SignUp);
         progressBar = findViewById(R.id.progressBar);
         textView = findViewById(R.id.forgotPassword);
 
+        // Forgot Password
         textView.setOnClickListener(v -> {
             String email = Objects.requireNonNull(editTextEmail.getText()).toString().trim();
 
-            Object x;
             if (TextUtils.isEmpty(email)) {
                 Toast.makeText(LoginActivity.this, "Enter your email first", Toast.LENGTH_SHORT).show();
                 return;
@@ -82,6 +79,7 @@ public class LoginActivity extends AppCompatActivity {
                     });
         });
 
+        // Login Button
         buttonLogin.setOnClickListener(v -> {
             String EMAIL = Objects.requireNonNull(editTextEmail.getText()).toString().trim();
             String PASSWORD = Objects.requireNonNull(editTextPASSWORD.getText()).toString().trim();
@@ -112,11 +110,6 @@ public class LoginActivity extends AppCompatActivity {
                             Toast.makeText(LoginActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                         }
                     });
-        });
-        btnGoToSignUp.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
-            startActivity(intent);
-            finish();
         });
     }
 }

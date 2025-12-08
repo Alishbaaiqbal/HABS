@@ -17,11 +17,11 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
     private final Context context;
     private final List<Doctor> doctorList;
 
-    // 🔹 NEW: we also keep hospital info in the adapter
+    // 🔹 we also keep hospital info in the adapter
     private final String hospitalName;
     private final String hospitalUniqueId;
 
-    // 🔹 UPDATED CONSTRUCTOR
+    // 🔹 constructor
     public DoctorAdapter(Context context,
                          List<Doctor> doctorList,
                          String hospitalName,
@@ -42,21 +42,24 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
     public void onBindViewHolder(DoctorViewHolder holder, int position) {
         Doctor doctor = doctorList.get(position);
 
+        // Top section
         holder.name.setText(doctor.getName());
-        holder.specialization.setText("Specialization: " + doctor.getSpecialization());
+        holder.specialization.setText( doctor.getSpecialization());
         holder.qualification.setText("Qualification: " + doctor.getQualification());
-        holder.experience.setText("Experience: " + doctor.getExperience() + " years");
-        holder.reviews.setText("Reviews: " + doctor.getTotalReviews());
-        holder.satisfaction.setText("Satisfaction: " + doctor.getSatisfactionRate() + "%");
-        holder.avgTime.setText("Avg Time: " + doctor.getAvgTime() + " mins");
-        holder.waitTime.setText("Wait Time: " + doctor.getWaitTime() + " mins");
-        holder.fee.setText("Fee: Rs. " + doctor.getFee());
 
-        // ✅ Show timing from JSON
+        // 🔹 Only values – headings already in layout/card
+        holder.experience.setText(doctor.getExperience() + " years");
+        holder.reviews.setText(doctor.getTotalReviews());
+        holder.satisfaction.setText(doctor.getSatisfactionRate() + "%");
+        holder.avgTime.setText(doctor.getAvgTime() + " mins");
+        holder.waitTime.setText(doctor.getWaitTime() + " mins");
+        holder.fee.setText("Rs. " + doctor.getFee());
+
+        // ✅ Show timing from JSON – again only value
         if (doctor.getTiming() != null && !doctor.getTiming().isEmpty()) {
-            holder.timing.setText("Timing: " + doctor.getTiming());
+            holder.timing.setText(doctor.getTiming());          // e.g. "5:00pm-7:00pm"
         } else {
-            holder.timing.setText("Timing: Not available");
+            holder.timing.setText("Not available");
         }
 
         holder.btnBook.setOnClickListener(v -> {
@@ -66,16 +69,13 @@ public class DoctorAdapter extends RecyclerView.Adapter<DoctorAdapter.DoctorView
             intent.putExtra("fee", doctor.getFee());
             intent.putExtra("timing", doctor.getTiming());
 
-            // ✅ Directly use Avg Time instead of consultationTime
-            String avgTime = doctor.getAvgTime(); // e.g. "15 mins"
+            // Directly use Avg Time
+            String avgTime = doctor.getAvgTime();
             intent.putExtra("avgTime", avgTime);
 
-            // 🔹 VERY IMPORTANT: pass hospital info to AppointmentBookingActivity
+            // hospital info
             intent.putExtra("hospitalName", hospitalName);
-            intent.putExtra("hospitalUniqueId", hospitalUniqueId);  // 👈 yahi se unique hospitalCode banega
-
-            // doctorCode optional hai – agar nahi bheja to AppointmentBookingActivity khud name se bana lega
-            // intent.putExtra("doctorCode", someDoctorCode);  // optional
+            intent.putExtra("hospitalUniqueId", hospitalUniqueId);
 
             context.startActivity(intent);
         });

@@ -5,98 +5,98 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="20dp"
-    tools:context=".Login"
-    tools:ignore="ExtraText">
+    android:gravity="center_horizontal"
+    android:padding="28dp"
+    android:background="#FFFFFF"
+    tools:context=".Login">
 
+    <!-- App Logo -->
     <ImageView
         android:id="@+id/habslogo"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:layout_gravity="center"
-        android:src="@drawable/logo" />
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="8dp"
+        android:src="@drawable/logo"
+        android:adjustViewBounds="true" />
 
+    <!-- App Name -->
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="84dp"
-        android:layout_gravity="center"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="25dp"
-        android:gravity="center"
-        android:padding="15dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
         android:text="HABS"
         android:textColor="#D32F2F"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.05"
+        android:gravity="center" />
 
-
+    <!-- Email Input -->
     <EditText
         android:id="@+id/Email"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:autofillHints=""
+        android:layout_height="54dp"
         android:hint="Email"
-        android:padding="12dp"
-        android:drawablePadding="8dp"
+        android:padding="16dp"
+        android:background="@drawable/rounded_edittext"
         android:drawableStart="@drawable/email"
-        tools:ignore="HardcodedText,TextFields,VisualLintTextFieldSize"/>
+        android:drawablePadding="12dp"
+        android:textSize="16sp"
+        android:textColor="#212121"
+        android:textColorHint="#9E9E9E"
+        tools:ignore="HardcodedText" />
 
-
+    <!-- Password Input -->
     <EditText
         android:id="@+id/PASSWORD"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:autofillHints=""
+        android:layout_height="54dp"
+        android:layout_marginTop="14dp"
+        android:hint="Password"
+        android:padding="16dp"
+        android:background="@drawable/rounded_edittext"
         android:drawableStart="@drawable/password"
-        android:drawablePadding="8dp"
-        android:hint="PASSWORD"
-        android:padding="12dp"
-        android:textColorHint="#546E7A"
-        tools:ignore="HardcodedText,TextFields,VisualLintTextFieldSize" />
+        android:drawablePadding="12dp"
+        android:inputType="textPassword"
+        android:textSize="16sp"
+        android:textColor="#212121"
+        android:textColorHint="#9E9E9E"
+        tools:ignore="HardcodedText" />
 
+    <!-- Progress bar -->
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="18dp"
+        android:visibility="gone" />
 
+    <!-- Login Button -->
     <Button
         android:id="@+id/btn_login"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="24dp"
-        android:backgroundTint="#D32F2F"
-        android:text="login"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_marginTop="26dp"
+        android:text="Login"
+        android:textAllCaps="false"
+        android:textStyle="bold"
+        android:textSize="17sp"
         android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        tools:ignore="VisualLintButtonSize" />
-    <Button
-        android:id="@+id/btn_SignUp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="24dp"
         android:backgroundTint="#D32F2F"
-        android:text="signup"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        tools:ignore="VisualLintButtonSize" />
+        />
 
-
+    <!-- Forgot Password -->
     <TextView
         android:id="@+id/forgotPassword"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="12dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:minHeight="48dp"
-        android:text="forgot password"
-        android:textColor="#000000"
-        android:textStyle="bold" />
+        android:layout_marginTop="18dp"
+        android:text="Forgot password?"
+        android:textStyle="bold"
+        android:textColor="#424242"
+        android:textSize="15sp"
+        android:padding="6dp"
+        />
 
 </LinearLayout>
