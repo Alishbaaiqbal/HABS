@@ -18,6 +18,12 @@
         android:theme="@style/Theme.HABSmainPage"
         tools:targetApi="31">
         <activity
+            android:name=".MyAppointmentsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DocterCurrentTokenActivity"
+            android:exported="false" />
+        <activity
             android:name=".AppointmentTrackingActivity"
             android:exported="false" />
         <activity

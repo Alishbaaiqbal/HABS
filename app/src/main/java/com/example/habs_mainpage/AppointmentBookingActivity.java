@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -58,6 +59,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
     RadioGroup rgConsultationType; // Online / In-person
     CheckBox cbConsent;
     Button btnConfirm;
+    FirebaseAuth mAuth;
 
     String[] generatedSlots = new String[0];
     String selectedSlot = null;
@@ -265,6 +267,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             appointmentData.put("fee", fee);
             appointmentData.put("date", formattedDate);
             appointmentData.put("slot", selectedSlot);
+            appointmentData.put("userId", mAuth.getInstance().getUid());
             appointmentData.put("patientName", patientName);
             appointmentData.put("contact", contact);
             appointmentData.put("reason", reason);

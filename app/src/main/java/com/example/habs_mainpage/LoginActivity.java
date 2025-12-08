@@ -28,7 +28,6 @@ public class LoginActivity extends AppCompatActivity {
     ProgressBar progressBar;
     TextView textView; // Forgot Password TextView
 
-    @Override
     public void onStart() {
         super.onStart();
         mAuth = FirebaseAuth.getInstance();
