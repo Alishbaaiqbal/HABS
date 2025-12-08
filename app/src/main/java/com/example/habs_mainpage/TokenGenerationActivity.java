@@ -1,11 +1,12 @@
 package com.example.habs_mainpage;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -13,6 +14,7 @@ public class TokenGenerationActivity extends AppCompatActivity {
 
     TextView tvTokenNumber, tvPatientName, tvDoctorName, tvDate, tvSlot, tvType;
     DatabaseReference appointmentRef;
+    Button btnProceedPayment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +28,7 @@ public class TokenGenerationActivity extends AppCompatActivity {
         tvDate = findViewById(R.id.tvDate);
         tvSlot = findViewById(R.id.tvSlot);
         tvType = findViewById(R.id.tvType);
+        btnProceedPayment = findViewById(R.id.btnProceedPayment);  // Button added here
 
         // Firebase reference
         appointmentRef = FirebaseDatabase
@@ -69,9 +72,22 @@ public class TokenGenerationActivity extends AppCompatActivity {
                     tvDate.setText(date);
                     tvSlot.setText(slot);
                     tvType.setText(type);
+
+                    // Set button click listener here
+                    btnProceedPayment.setOnClickListener(v -> {
+                        Intent intent = new Intent(TokenGenerationActivity.this, PaymentMethodActivity.class);
+                        intent.putExtra("appointmentId", appointmentId);
+                        intent.putExtra("patientName", patientName);
+                        // Assuming patient's email is stored in Firebase under 'email'
+                        String patientEmail = snapshot.child("email").getValue(String.class);
+                        intent.putExtra("patientEmail", patientEmail);
+                        startActivity(intent);
+                    });
+
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
+
     }
 }

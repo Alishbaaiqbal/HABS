@@ -4,10 +4,6 @@ plugins {
 }
 
 
-configurations.all {
-    exclude(group = "androidx.annotation", module = "annotation-jvm")
-}
-
 android {
     namespace = "com.example.habs_mainpage"
     compileSdk = 35
@@ -60,4 +56,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation ("androidx.annotation:annotation:1.7.1")
+
 }

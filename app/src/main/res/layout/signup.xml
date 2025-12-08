@@ -47,13 +47,14 @@
         <!-- Name -->
         <EditText
             android:id="@+id/Name"
+            android:inputType="text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Name"
             android:drawableStart="@drawable/person"
             android:drawablePadding="10dp"
             android:padding="12dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="12dp"
             android:textColor="@color/black"/>
 
         <!-- Email -->
