@@ -22,7 +22,7 @@ public class TokenGenerationActivity extends AppCompatActivity {
         setContentView(R.layout.tokengeneration);
 
         // Bind UI
-        tvTokenNumber = findViewById(R.id.tvTokenNumber);
+        tvTokenNumber = findViewById(R.id.tvToken);
         tvPatientName = findViewById(R.id.tvPatientName);
         tvDoctorName = findViewById(R.id.tvDoctorName);
         tvDate = findViewById(R.id.tvDate);

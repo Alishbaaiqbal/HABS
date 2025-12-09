@@ -1,66 +1,253 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F5F5F5">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
 
-            <TextView
-                android:layout_height="wrap_content"
-                android:textStyle="bold"
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Appointment Confirmed"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your appointment has been successfully booked"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- Token Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:padding="20dp"
+                android:gravity="center">
 
                 <TextView
-                    android:layout_height="wrap_content"
-
-                <TextView
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                </LinearLayout>
-
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:text="Token Number"
+                    android:textSize="14sp"
+                    android:textColor="#666666"
+                    android:layout_marginBottom="8dp"/>
 
                 <TextView
+                    android:id="@+id/tvToken"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:textColor="#4CAF50"/>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Appointment Details Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Appointment Details"
                     android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginTop="16dp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Patient Name -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Patient Name:"
+                        android:textSize="14sp"
+                        android:textColor="#666666"/>
+
+                    <TextView
+                        android:id="@+id/tvPatientName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#333333"
+                        android:gravity="end"/>
+
+                </LinearLayout>
+
+                <!-- Doctor Name -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Doctor:"
+                        android:textSize="14sp"
+                        android:textColor="#666666"/>
+
+                    <TextView
+                        android:id="@+id/tvDoctorName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#333333"
+                        android:gravity="end"/>
+
+                </LinearLayout>
+
+                <!-- Date -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Date:"
+                        android:textSize="14sp"
+                        android:textColor="#666666"/>
+
+                    <TextView
+                        android:id="@+id/tvDate"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#333333"
+                        android:gravity="end"/>
+
+                </LinearLayout>
+
+                <!-- Time Slot -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Time Slot:"
+                        android:textSize="14sp"
+                        android:textColor="#666666"/>
+
+                    <TextView
+                        android:id="@+id/tvSlot"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#333333"
+                        android:gravity="end"/>
+
+                </LinearLayout>
+
+                <!-- Appointment Type -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Type:"
+                        android:textSize="14sp"
+                        android:textColor="#666666"/>
+
+                    <TextView
+                        android:id="@+id/tvType"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#333333"
+                        android:gravity="end"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Proceed to Payment Button -->
+        <Button
+            android:id="@+id/btnProceedPayment"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Proceed to Payment"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_background"
+            android:elevation="2dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Please arrive 15 minutes before your appointment"
+            android:textSize="12sp"
+            android:textColor="#999999"
+            android:layout_marginTop="16dp"
+            android:gravity="center"/>
+
     </LinearLayout>
+
 </ScrollView>
