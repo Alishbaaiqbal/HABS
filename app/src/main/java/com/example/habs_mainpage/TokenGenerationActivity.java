@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.database.DatabaseReference;
@@ -15,6 +16,8 @@ public class TokenGenerationActivity extends AppCompatActivity {
     TextView tvTokenNumber, tvPatientName, tvDoctorName, tvDate, tvSlot, tvType;
     DatabaseReference appointmentRef;
     Button btnProceedPayment;
+
+    String appointmentId;   // keep as field so we can reuse easily
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,7 +31,7 @@ public class TokenGenerationActivity extends AppCompatActivity {
         tvDate = findViewById(R.id.tvDate);
         tvSlot = findViewById(R.id.tvSlot);
         tvType = findViewById(R.id.tvType);
-        btnProceedPayment = findViewById(R.id.btnProceedPayment);  // Button added here
+        btnProceedPayment = findViewById(R.id.btnProceedPayment);
 
         // Firebase reference
         appointmentRef = FirebaseDatabase
@@ -36,21 +39,22 @@ public class TokenGenerationActivity extends AppCompatActivity {
                 .getReference("Appointments");
 
         // Get appointmentId from previous screen
-        String appointmentId = getIntent().getStringExtra("appointmentId");
+        appointmentId = getIntent().getStringExtra("appointmentId");
 
         if (appointmentId == null) {
             Toast.makeText(this, "Error: No Appointment ID received!", Toast.LENGTH_SHORT).show();
+            finish();
             return;
         }
 
-        // Show token number (same appointment ID)
+        // Show token number (same as appointment ID)
         tvTokenNumber.setText("Your Token: " + appointmentId);
 
-        // Fetch details from Firebase
-        fetchAppointmentDetails(appointmentId);
+        // Fetch details from Firebase and then enable payment button
+        fetchAppointmentDetails();
     }
 
-    private void fetchAppointmentDetails(String appointmentId) {
+    private void fetchAppointmentDetails() {
         appointmentRef.child(appointmentId).get()
                 .addOnSuccessListener(snapshot -> {
 
@@ -65,6 +69,8 @@ public class TokenGenerationActivity extends AppCompatActivity {
                     String date = snapshot.child("date").getValue(String.class);
                     String slot = snapshot.child("slot").getValue(String.class);
                     String type = snapshot.child("type").getValue(String.class);
+                    String patientEmail = snapshot.child("email").getValue(String.class); // may be null
+                    String fee = snapshot.child("fee").getValue(String.class);            // ⭐ NEW
 
                     // Fill UI
                     tvPatientName.setText(patientName);
@@ -73,21 +79,24 @@ public class TokenGenerationActivity extends AppCompatActivity {
                     tvSlot.setText(slot);
                     tvType.setText(type);
 
-                    // Set button click listener here
+                    // Button ab yahan se payment page pe le jayega
                     btnProceedPayment.setOnClickListener(v -> {
+                        if (fee == null) {
+                            Toast.makeText(this, "Fee is missing for this appointment.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
                         Intent intent = new Intent(TokenGenerationActivity.this, PaymentMethodActivity.class);
                         intent.putExtra("appointmentId", appointmentId);
+                        intent.putExtra("fee", fee);              // ⭐ fee send to payment screen
                         intent.putExtra("patientName", patientName);
-                        // Assuming patient's email is stored in Firebase under 'email'
-                        String patientEmail = snapshot.child("email").getValue(String.class);
                         intent.putExtra("patientEmail", patientEmail);
                         startActivity(intent);
                     });
 
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Failed to load appointment: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
-
     }
 }

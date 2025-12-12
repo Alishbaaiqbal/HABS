@@ -1,56 +1,177 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
-    android:gravity="center_horizontal"
+    android:background="@drawable/gradient_background"
+    android:gravity="center"
     android:orientation="vertical"
     android:padding="24dp">
 
-    <!-- App Logo -->
-    <ImageView
-        android:id="@+id/appLogo"
-        android:layout_width="309dp"
-        android:layout_height="241dp"
-        android:layout_marginTop="40dp"
-        android:layout_marginBottom="16dp"
-        android:src="@drawable/logo" />
+    <!-- App Logo with Card Background -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="70dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="#FFFFFF">
 
-    <!-- App Name -->
-    <TextView
-        android:id="@+id/appName"
+        <ImageView
+            android:id="@+id/appLogo"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/logo"
+            android:src="@drawable/logo"
+            android:scaleType="centerInside" />
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- App Name with Icon -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="60dp"
-        android:lineSpacingExtra="8sp"
-        android:text="Habs"
-        android:textAllCaps="true"
-        android:textColor="@android:color/holo_red_dark"
-        android:textSize="34sp"
-        android:textStyle="bold" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="6dp">
 
-    <!-- Signup Button -->
-    <Button
-        android:id="@+id/btnSignup"
-        android:layout_width="155dp"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="❤️"
+            android:textSize="28sp"
+            android:layout_marginEnd="6dp" />
+
+        <TextView
+            android:id="@+id/appName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="HealthConnect"
+            android:textColor="#D32F2F"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+
+    </LinearLayout>
+
+    <!-- Tagline -->
+    <TextView
+        android:id="@+id/tagline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="30dp"
+        android:text="🩺 Your Health, Connected"
+        android:textColor="#616161"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif-light" />
+
+    <!-- Feature Highlights - Compact -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="30dp">
+
+        <TextView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginHorizontal="12dp"
+            android:background="@drawable/feature_circle"
+            android:gravity="center"
+            android:text="📱"
+            android:textSize="22sp" />
+
+        <TextView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginHorizontal="12dp"
+            android:background="@drawable/feature_circle"
+            android:gravity="center"
+            android:text="🔒"
+            android:textSize="22sp" />
+
+        <TextView
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginHorizontal="12dp"
+            android:background="@drawable/feature_circle"
+            android:gravity="center"
+            android:text="⚡"
+            android:textSize="22sp" />
+
+    </LinearLayout>
+
+    <!-- Buttons Card Container - Compact -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="#FFFFFF">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Signup Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSignup"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginBottom="10dp"
+                android:backgroundTint="#D32F2F"
+                android:text="Sign Up"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textAllCaps="false"
+                android:fontFamily="sans-serif-medium"
+                app:cornerRadius="14dp"
+                app:elevation="3dp" />
+
+            <!-- OR Divider -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="OR"
+                android:textColor="#9E9E9E"
+                android:textSize="11sp"
+                android:paddingVertical="6dp"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- Login Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="10dp"
+                android:backgroundTint="#D32F2F"
+                android:text="Login"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textAllCaps="false"
+                android:fontFamily="sans-serif-medium"
+                app:cornerRadius="14dp"
+                app:elevation="3dp" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Footer Text -->
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:backgroundTint="@android:color/holo_red_dark"
-        android:paddingHorizontal="30dp"
-        android:text="Signup"
-        android:textColor="@android:color/white" />
-
-    <!-- Login Button -->
-
-    <Button
-        android:id="@+id/btnLogin"
-        android:layout_width="158dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:backgroundTint="@android:color/holo_red_dark"
-        android:paddingHorizontal="30dp"
-        android:text="Login"
-        android:textColor="@android:color/white" />
-
+        android:text="Connecting patients and healthcare"
+        android:textColor="#9E9E9E"
+        android:textSize="11sp"
+        android:fontFamily="sans-serif-light"
+        android:gravity="center" />
 
 </LinearLayout>

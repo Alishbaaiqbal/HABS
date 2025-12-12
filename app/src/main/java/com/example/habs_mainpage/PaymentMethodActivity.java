@@ -9,7 +9,7 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.database.DatabaseReference;
@@ -23,34 +23,49 @@ import java.util.Map;
 
 public class PaymentMethodActivity extends AppCompatActivity {
 
-    TextView tvFee;
+    TextView tvDoctorFee, tvServiceCharge, tvTotalAmount;
     RadioGroup rgPaymentMethod;
-    RadioButton rbCash, rbOnline, rbBankTransfer;
+    RadioButton rbCash, rbJazzCash, rbEasyPaisa, rbBankTransfer;
     Button btnPayNow;
 
     DatabaseReference appointmentRef;
 
     String appointmentId;
-    double fee;
+    double fee;             // doctor fee
+    double serviceCharge;   // service fee
+    double totalAmount;     // fee + serviceCharge
 
     @SuppressLint("MissingInflatedId")
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(@NotNull Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.paymentmethod);
 
-        tvFee = findViewById(R.id.tvFee);
+        // 🔹 Bind views (IDs must match your XML)
+        tvDoctorFee = findViewById(R.id.tvDoctorFee);
+        tvServiceCharge = findViewById(R.id.tvServiceCharge);
+        tvTotalAmount = findViewById(R.id.tvTotalAmount);
+
         rgPaymentMethod = findViewById(R.id.rgPaymentMethod);
         rbCash = findViewById(R.id.rbCash);
-        rbOnline = findViewById(R.id.rbOnline);
+        rbJazzCash = findViewById(R.id.rbJazzCash);
+        rbEasyPaisa = findViewById(R.id.rbEasyPaisa);
         rbBankTransfer = findViewById(R.id.rbBankTransfer);
+
         btnPayNow = findViewById(R.id.btnPayNow);
 
+        // 🔹 Data from previous screen
         appointmentId = getIntent().getStringExtra("appointmentId");
         String feeStr = getIntent().getStringExtra("fee");
 
         if (appointmentId == null || appointmentId.isEmpty()) {
-            Toast.makeText(this, "Invalid Appointment ID", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid appointment. Please try again.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        if (feeStr == null || feeStr.isEmpty()) {
+            Toast.makeText(this, "Fee not received. Please go back and try again.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -61,15 +76,25 @@ public class PaymentMethodActivity extends AppCompatActivity {
             fee = 0;
         }
 
-        tvFee.setText("Fee: Rs. " + String.format("%.2f", fee));
+        // 🔹 Calculate charges (service charge can be adjusted)
+        serviceCharge = 50;                // e.g. Rs. 50 platform/service fee
+        totalAmount = fee + serviceCharge;
 
-        appointmentRef = FirebaseDatabase.getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
+        // 🔹 Show breakdown on UI
+        tvDoctorFee.setText("Rs. " + String.format(Locale.getDefault(), "%.2f", fee));
+        tvServiceCharge.setText("Rs. " + String.format(Locale.getDefault(), "%.2f", serviceCharge));
+        tvTotalAmount.setText("Rs. " + String.format(Locale.getDefault(), "%.2f", totalAmount));
+
+        // 🔹 Firebase reference
+        appointmentRef = FirebaseDatabase
+                .getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
                 .getReference("Appointments");
 
         btnPayNow.setOnClickListener(v -> processPayment());
     }
 
     private void processPayment() {
+
         int selectedId = rgPaymentMethod.getCheckedRadioButtonId();
 
         if (selectedId == -1) {
@@ -83,51 +108,80 @@ public class PaymentMethodActivity extends AppCompatActivity {
         btnPayNow.setEnabled(false);
         btnPayNow.setText("Processing...");
 
-        if (selectedId == R.id.rbOnline) {
-            // Simulate online payment success after 2 seconds
-            btnPayNow.postDelayed(() -> onPaymentSuccess("TXN123456789"), 2000);
-        } else {
-            // For Cash or Bank Transfer, payment status remains pending
+        if (selectedId == R.id.rbCash) {
+            // 🟡 Cash at hospital → payment remains pending
             savePaymentStatus(paymentMethod, "pending");
+        } else {
+            // 🟢 JazzCash / EasyPaisa / Bank Transfer → simulate online success
+            String txnId = generateTransactionId();
+            btnPayNow.postDelayed(() -> onPaymentSuccess(paymentMethod, txnId), 2000);
         }
     }
 
-    private void onPaymentSuccess(String transactionId) {
-        savePaymentStatus("Online Payment", "paid", transactionId);
+    /**
+     * 🔑 Har transaction ke liye unique ID generate karta hai.
+     * Format: TXN-{appointmentId}-{timestamp}-{5digitRandom}
+     */
+    private String generateTransactionId() {
+        long timestamp = System.currentTimeMillis();
+        int random = (int) (Math.random() * 90000) + 10000; // 5 digit random
+        return "TXN-" + appointmentId + "-" + timestamp + "-" + random;
     }
 
-    // Overloaded method for pending payment (no transaction ID)
+    private void onPaymentSuccess(String paymentMethod, String transactionId) {
+        // Online-type payment success
+        savePaymentStatus(paymentMethod, "paid", transactionId);
+    }
+
+    // Overloaded method for pending (no transaction ID)
     private void savePaymentStatus(String paymentMethod, String status) {
         savePaymentStatus(paymentMethod, status, null);
     }
 
     private void savePaymentStatus(String paymentMethod, String status, String transactionId) {
+
         String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 .format(new Date());
 
         Map<String, Object> updates = new HashMap<>();
-        updates.put("paymentStatus", status);
-        updates.put("paymentMethod", paymentMethod);
-        updates.put("paymentAmount", fee);
+        updates.put("paymentStatus", status);         // "paid" / "pending"
+        updates.put("paymentMethod", paymentMethod);  // Cash / JazzCash / EasyPaisa / Bank Transfer
+        updates.put("paymentAmount", totalAmount);    // fee + service
         updates.put("paymentTime", timestamp);
+
+        // 🔹 Update overall appointment status
+        if ("paid".equals(status)) {
+            updates.put("status", "Confirmed");    // payment done → appointment confirmed
+        } else {
+            updates.put("status", "Pending");      // still pending payment (cash)
+        }
+
         if (transactionId != null) {
             updates.put("transactionId", transactionId);
         }
 
         appointmentRef.child(appointmentId).updateChildren(updates)
                 .addOnSuccessListener(aVoid -> {
-                    if (status.equals("paid")) {
-                        Toast.makeText(this, "Payment Successful!", Toast.LENGTH_SHORT).show();
+
+                    if ("paid".equals(status)) {
+                        Toast.makeText(this,
+                                "Payment successful. Your appointment is confirmed.",
+                                Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(this, "Payment Pending - Please pay at hospital", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this,
+                                "Payment marked as pending. Please pay at the hospital.",
+                                Toast.LENGTH_SHORT).show();
                     }
 
-                    // Open PaymentReceiptActivity with updated info
+                    // 👉 Go to receipt screen (if you have this Activity)
                     Intent intent = new Intent(PaymentMethodActivity.this, PaymentReceiptActivity.class);
                     intent.putExtra("appointmentId", appointmentId);
                     intent.putExtra("paymentStatus", status);
                     intent.putExtra("paymentMethod", paymentMethod);
-                    intent.putExtra("totalAmount", fee);
+                    intent.putExtra("totalAmount", totalAmount);
+                    if (transactionId != null) {
+                        intent.putExtra("transactionId", transactionId);
+                    }
                     startActivity(intent);
 
                     finish();
@@ -135,7 +189,7 @@ public class PaymentMethodActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Payment update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     btnPayNow.setEnabled(true);
-                    btnPayNow.setText("Pay Now");
+                    btnPayNow.setText("PAY NOW");
                 });
     }
 }

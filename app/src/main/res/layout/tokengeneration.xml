@@ -236,7 +236,7 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:background="@drawable/button_background"
+            android:backgroundTint="#D32F2F"
             android:elevation="2dp"/>
 
         <TextView
