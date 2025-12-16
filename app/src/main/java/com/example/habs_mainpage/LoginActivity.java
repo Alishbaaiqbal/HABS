@@ -33,7 +33,7 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
-            startActivity(new Intent(getApplicationContext(), PatientPrescriptionHistoryActivity.class));
+            startActivity(new Intent(getApplicationContext(), HomePage.class));
             finish();
         }
     }
@@ -103,7 +103,7 @@ public class LoginActivity extends AppCompatActivity {
                         progressBar.setVisibility(View.GONE);
                         if (task.isSuccessful()) {
                             Toast.makeText(LoginActivity.this, "Login successful.", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(getApplicationContext(), PatientPrescriptionHistoryActivity.class));
+                            startActivity(new Intent(getApplicationContext(), HomePage.class));
                             finish();
                         } else {
                             Toast.makeText(LoginActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
