@@ -2,168 +2,197 @@ package com.example.habs_mainpage;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class DocterCurrentTokenActivity extends AppCompatActivity {
 
-    Spinner spinnerDoctors;
-    TextView tvToken, tvStatus;
+    TextView tvYourToken, tvCurrentToken, tvWaitingTime;
 
     DatabaseReference appointmentRef;
-    String userId;
 
-    List<String> doctorList = new ArrayList<>();
+    String appointmentId;
+    String doctorCode = "", hospitalCode = "";
+    String todayDate;
 
-    String selectedDoctor = "";
+    int consultationMinutes = 10;
 
     Handler handler = new Handler();
-    Runnable autoRefreshRunnable;
+
+    SimpleDateFormat dateFormat =
+            new SimpleDateFormat("dd MMM yyyy", Locale.US);
+    SimpleDateFormat fullFormat =
+            new SimpleDateFormat("dd MMM yyyy hh:mm a", Locale.US);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_docter_current_token);
 
-        spinnerDoctors = findViewById(R.id.spinnerDoctors);
-        tvToken = findViewById(R.id.tvCurrentToken);
-        tvStatus = findViewById(R.id.tvStatus);
-
-        userId = FirebaseAuth.getInstance().getUid();
+        // 🔹 UI ORDER FIXED
+        tvYourToken = findViewById(R.id.tvYourToken);
+        tvCurrentToken = findViewById(R.id.tvCurrentToken);
+        tvWaitingTime = findViewById(R.id.tvWaitingTime);
 
         appointmentRef = FirebaseDatabase
                 .getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
                 .getReference("Appointments");
 
-        loadDoctorsForUser();
-        setupAutoRefresh();
+        todayDate = dateFormat.format(new Date());
+
+        appointmentId = getIntent().getStringExtra("appointmentId");
+
+        if (appointmentId == null || appointmentId.isEmpty()) {
+            Toast.makeText(this, "Appointment not found", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        loadAppointmentSafely();
     }
 
-    private void setupAutoRefresh() {
-        autoRefreshRunnable = () -> {
-            if (!selectedDoctor.isEmpty()) {
-                loadCurrentToken(selectedDoctor);
-            }
-            handler.postDelayed(autoRefreshRunnable, 15000);
-        };
-
-        handler.postDelayed(autoRefreshRunnable, 15000);
-    }
-
-    private void loadDoctorsForUser() {
-        appointmentRef.get().addOnSuccessListener(snapshot -> {
-
-            doctorList.clear();
-
-            for (DataSnapshot child : snapshot.getChildren()) {
-
-                String doctor = safeGet(child, "doctorName");
-
-                if (!doctor.isEmpty() && !doctorList.contains(doctor)) {
-                    doctorList.add(doctor);
-                }
-            }
-
-            if (doctorList.isEmpty()) {
-                Toast.makeText(this, "No doctors found!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            ArrayAdapter<String> adapter =
-                    new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, doctorList);
-
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            spinnerDoctors.setAdapter(adapter);
-
-            spinnerDoctors.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
-                    selectedDoctor = doctorList.get(position);
-                    loadCurrentToken(selectedDoctor);
-                }
-
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {}
-            });
-
-        }).addOnFailureListener(e ->
-                Toast.makeText(this, "Error loading doctors: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-        );
-    }
-
-
-    private void loadCurrentToken(String doctorName) {
+    // 🔹 Find appointment safely
+    private void loadAppointmentSafely() {
 
         appointmentRef.get().addOnSuccessListener(snapshot -> {
-
-            long now = System.currentTimeMillis();
-            long currentSlotIndex = now / (15 * 60 * 1000);
-
-            String foundToken = null;
 
             for (DataSnapshot appt : snapshot.getChildren()) {
 
-                String doctor = safeGet(appt, "doctorName");
-                String date = safeGet(appt, "date");
-                String slot = safeGet(appt, "slot");
+                String apptId =
+                        appt.child("appointmentId").getValue(String.class);
 
-                if (!doctor.equalsIgnoreCase(doctorName)) continue;
+                if (appointmentId.equals(apptId)) {
 
-                long apptTime = convertToMillis(date, slot);
-                if (apptTime == 0) continue;
+                    doctorCode = appt.child("doctorCode").getValue(String.class);
+                    hospitalCode = appt.child("hospitalCode").getValue(String.class);
 
-                long apptIndex = apptTime / (15 * 60 * 1000);
+                    if (doctorCode == null || hospitalCode == null) {
+                        Toast.makeText(this,
+                                "Invalid appointment data",
+                                Toast.LENGTH_LONG).show();
+                        finish();
+                        return;
+                    }
 
-                if (apptIndex == currentSlotIndex) {
-                    foundToken = safeGet(appt, "appointmentId");
+                    // 🔹 UI FIRST = YOUR TOKEN
+                    tvYourToken.setText("Your Token:\n" + appointmentId);
+
+                    loadDoctorTimingFromJson();
+                    startLiveQueue();
+                    return;
+                }
+            }
+
+            Toast.makeText(this,
+                    "Appointment not found",
+                    Toast.LENGTH_LONG).show();
+            finish();
+        });
+    }
+
+    // 🔹 refresh every 15 sec
+    private void startLiveQueue() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                calculateLiveQueue();
+                handler.postDelayed(this, 15000);
+            }
+        }, 0);
+    }
+
+    // 🔹 FINAL LIVE QUEUE LOGIC (FIXED)
+    private void calculateLiveQueue() {
+
+        appointmentRef.get().addOnSuccessListener(snapshot -> {
+
+            List<DataSnapshot> queue = new ArrayList<>();
+
+            for (DataSnapshot appt : snapshot.getChildren()) {
+
+                if (!doctorCode.equals(appt.child("doctorCode").getValue(String.class)))
+                    continue;
+                if (!hospitalCode.equals(appt.child("hospitalCode").getValue(String.class)))
+                    continue;
+                if (!todayDate.equals(appt.child("date").getValue(String.class)))
+                    continue;
+
+                queue.add(appt);
+            }
+
+            if (queue.isEmpty()) return;
+
+            // 🔹 STRONG SLOT-TIME SORT (BUG FIX)
+            Collections.sort(queue, (a, b) -> {
+                long t1 = safeMillis(a);
+                long t2 = safeMillis(b);
+                return Long.compare(t1, t2);
+            });
+
+            // 🔹 CURRENT INDEX from TIME
+            long now = System.currentTimeMillis();
+            int currentIndex = 0;
+
+            for (int i = 0; i < queue.size(); i++) {
+                if (now >= safeMillis(queue.get(i))) {
+                    currentIndex = i;
+                }
+            }
+
+            String currentToken =
+                    queue.get(currentIndex).child("appointmentId").getValue(String.class);
+
+            int yourIndex = -1;
+            for (int i = 0; i < queue.size(); i++) {
+                if (appointmentId.equals(
+                        queue.get(i).child("appointmentId").getValue(String.class))) {
+                    yourIndex = i;
                     break;
                 }
             }
 
-            if (foundToken != null) {
-                tvToken.setText("Current Token: " + foundToken);
-                tvStatus.setText("Status: Calling Patient");
-            } else {
-                tvToken.setText("No Token");
-                tvStatus.setText("Status: Waiting…");
-            }
+            tvCurrentToken.setText("Current Token:\n" + currentToken);
 
+            int wait =
+                    Math.max(0, (yourIndex - currentIndex) * consultationMinutes);
+
+            tvWaitingTime.setText("Estimated Time: " + wait + " mins");
         });
     }
 
-
-
-    private long convertToMillis(String date, String slot) {
+    // 🔹 SLOT TIME NORMALIZATION (MAIN FIX)
+    private long safeMillis(DataSnapshot appt) {
         try {
-            if (date == null || slot == null || date.isEmpty() || slot.isEmpty())
-                return 0;
+            String date = appt.child("date").getValue(String.class);
+            String slot = appt.child("slot").getValue(String.class);
 
-            // Slot will be "5:30 PM - 5:45 PM"
-            if (slot.contains("-")) {
-                slot = slot.split("-")[0].trim();  // Only first time
-            }
+            if (date == null || slot == null) return 0;
 
-            // Your DB date format = "27 Nov 2025"
-            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy hh:mm a");
+            slot = slot.toUpperCase()
+                    .replace("PM", " PM")
+                    .replace("AM", " AM")
+                    .replaceAll("\\s+", " ")
+                    .trim();
 
-            String combined = date + " " + slot;   // EXAMPLE → "27 Nov 2025 5:30 PM"
-
-            Date d = sdf.parse(combined);
+            Date d = fullFormat.parse(date + " " + slot);
             return d.getTime();
 
         } catch (Exception e) {
@@ -171,16 +200,44 @@ public class DocterCurrentTokenActivity extends AppCompatActivity {
         }
     }
 
+    // 🔹 Doctor timing from JSON (UNCHANGED)
+    private void loadDoctorTimingFromJson() {
+        try {
+            InputStream is = getAssets().open("DoctorDataset.json");
+            byte[] buffer = new byte[is.available()];
+            is.read(buffer);
+            is.close();
 
-    private String safeGet(DataSnapshot snap, String key) {
-        String value = snap.child(key).getValue(String.class);
-        return value == null ? "" : value;
+            JSONObject root = new JSONObject(new String(buffer));
+            JSONArray hospitals = root.names();
+
+            for (int i = 0; i < hospitals.length(); i++) {
+                JSONArray doctors = root.getJSONArray(hospitals.getString(i));
+
+                for (int j = 0; j < doctors.length(); j++) {
+                    JSONObject d = doctors.getJSONObject(j);
+
+                    if (buildCode(d.getString("Doctor Name"))
+                            .equals(doctorCode)) {
+                        consultationMinutes =
+                                d.getInt("Avg Time to Patients(mins)");
+                        return;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
+    private String buildCode(String name) {
+        String[] p = name.replace("Dr.", "").trim().split(" ");
+        String c = "DR";
+        for (String s : p) c += s.charAt(0);
+        return c.length() > 4 ? c.substring(0, 4) : c;
+    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(autoRefreshRunnable);
+        handler.removeCallbacksAndMessages(null);
     }
 }

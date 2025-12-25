@@ -65,6 +65,14 @@
         <activity
             android:name=".PaymentReceiptActivity"
             android:exported="true" /> <!-- Google Maps API Key -->
+        <activity
+            android:name=".MyAppointmentsActivity"
+            android:exported="true" />
+
+        <activity
+            android:name=".DocterCurrentTokenActivity"
+            android:exported="true" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDOvI7B1rs0ZZhDUNVNmRs83xaYtx__hX0" />

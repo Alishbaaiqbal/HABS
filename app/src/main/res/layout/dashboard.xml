@@ -60,7 +60,22 @@
         android:layout_marginBottom="8dp"
         android:background="#DDDDDD" />
 
-    
+    <!-- My Appointment Button -->
+    <Button
+        android:id="@+id/btnMyAppointment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="My Appointment"
+        android:textAllCaps="false"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:padding="12dp"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:backgroundTint="#6A1B9A" />
+
+
+
 
 
     <!-- Hospital List -->

@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import android.content.Intent;
+import com.google.firebase.auth.FirebaseAuth;
+
 
 public class AppointmentBookingActivity extends AppCompatActivity {
 
@@ -325,6 +327,7 @@ public class AppointmentBookingActivity extends AppCompatActivity {
                                              String appointmentType, String timing, String slotKey) {
 
         counterRef.get().addOnSuccessListener(snapshot -> {
+
             long currentCount = snapshot.exists() ? snapshot.getValue(Long.class) : 0;
             long newCount = currentCount + 1;
             counterRef.setValue(newCount);
@@ -332,8 +335,21 @@ public class AppointmentBookingActivity extends AppCompatActivity {
             // I-HOSP-DRXX-1 / O-HOSP-DRXX-2 etc.
             String customId = typePrefix + "-" + hospitalCode + "-" + doctorCode + "-" + newCount;
 
+            // ✅ ALWAYS initialize map first
             Map<String, Object> appointmentData = new HashMap<>();
+
+            // ✅ get logged-in userId safely
+            String userId = FirebaseAuth.getInstance().getUid();
+            if (userId == null) {
+                Toast.makeText(this,
+                        "Session expired. Please login again.",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // ✅ save data
             appointmentData.put("appointmentId", customId);
+            appointmentData.put("userId", userId);
             appointmentData.put("hospitalName", hospitalName);
             appointmentData.put("hospitalCode", hospitalCode);
             appointmentData.put("doctorCode", doctorCode);
@@ -356,14 +372,11 @@ public class AppointmentBookingActivity extends AppCompatActivity {
                                 "Appointment " + customId + " booked successfully.",
                                 Toast.LENGTH_SHORT).show();
 
-                        try {
-                            Intent intent = new Intent(AppointmentBookingActivity.this,
-                                    TokenGenerationActivity.class);
-                            intent.putExtra("appointmentId", customId);
-                            startActivity(intent);
-                        } catch (Exception e) {
-                            Log.e("AppointmentBooking", "Failed to start TokenGenerationActivity", e);
-                        }
+                        Intent intent = new Intent(
+                                AppointmentBookingActivity.this,
+                                TokenGenerationActivity.class);
+                        intent.putExtra("appointmentId", customId);
+                        startActivity(intent);
                     })
                     .addOnFailureListener(e ->
                             Toast.makeText(this,
@@ -376,4 +389,5 @@ public class AppointmentBookingActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT).show();
         });
     }
+
 }

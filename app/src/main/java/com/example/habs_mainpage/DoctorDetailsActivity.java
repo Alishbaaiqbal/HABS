@@ -172,7 +172,7 @@ public class DoctorDetailsActivity extends AppCompatActivity {
     }
 
     private void setupTimeSpinner() {
-        List<String> list = List.of("Any Time", "Morning", "Afternoon", "Evening", "Night");
+        List<String> list = List.of("Any Time", "Morning", "Afternoon", "Evening");
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, list);

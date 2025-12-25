@@ -39,6 +39,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import android.content.Intent;
+import android.widget.Button;
+
 
 public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -49,6 +52,8 @@ public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
     private static final String API_KEY = "AIzaSyD0LZrCsWehM4x9opUS7gKPQobUUzvBJKA";
 
     private GoogleMap mMap;
+    private Button btnMyAppointment;
+
     private FusedLocationProviderClient fusedLocationClient;
     private TextView currentAddressTextView;
 
@@ -77,6 +82,13 @@ public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
+        btnMyAppointment = findViewById(R.id.btnMyAppointment);
+
+        btnMyAppointment.setOnClickListener(v -> {
+            Intent intent = new Intent(HomePage.this, MyAppointmentsActivity.class);
+            startActivity(intent);
+        });
+
     }
 
 
