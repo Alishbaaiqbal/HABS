@@ -80,6 +80,18 @@ public class SignUpActivity extends AppCompatActivity {
             }
 
             String role = radioPatient.isChecked() ? "Patient" : "Hospital";
+            // 🔐 Hospital email validation
+            if (role.equals("Hospital")) {
+                if (!email.toLowerCase().endsWith("@hospital.com")) {
+                    Toast.makeText(
+                            SignUpActivity.this,
+                            "Hospital signup requires an @hospital.com email",
+                            Toast.LENGTH_LONG
+                    ).show();
+                    return;
+                }
+            }
+
 
             // Create Firebase user
             mAuth.createUserWithEmailAndPassword(email, password)

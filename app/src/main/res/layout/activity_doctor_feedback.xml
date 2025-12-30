@@ -1,0 +1,43 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F6F7FB"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/tvDoctorTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Doctor Feedback"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#1A237E"
+        android:padding="8dp"/>
+
+    <TextView
+        android:id="@+id/tvAvgRating"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Average Rating: 0.0"
+        android:textSize="16sp"
+        android:padding="8dp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="8dp"/>
+    <Button
+        android:id="@+id/btnGiveFeedback"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Give Feedback"
+        android:textAllCaps="false"
+        android:layout_margin="8dp"
+        android:backgroundTint="#6A1B9A"
+        android:textColor="@android:color/white"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerFeedback"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</LinearLayout>

@@ -1,89 +1,107 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#FFFFFF"
-    android:padding="16dp">
+    android:background="#FFFFFF">
 
-    <!-- Location Header with Logo -->
-    <LinearLayout
+    <!-- 🔹 Main Content Wrapper -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingBottom="8dp">
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNavigation"
+        android:fillViewport="true">
 
-        <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:src="@drawable/logo"
-            android:contentDescription="App Logo" />
-
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Your Location"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:paddingStart="12dp"
-            android:textColor="#000000" />
-    </LinearLayout>
+            android:orientation="vertical"
+            android:padding="16dp">
 
-    <!-- Address below location (updated using Geocoder) -->
-    <TextView
-        android:id="@+id/tv_current_address"
+            <!-- Location Header with Logo -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingBottom="8dp">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/logo"
+                    android:contentDescription="App Logo" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your Location"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:paddingStart="12dp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+
+            <!-- Address -->
+            <TextView
+                android:id="@+id/tv_current_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Detecting your location..."
+                android:textSize="14sp"
+                android:textColor="#444444"
+                android:paddingBottom="8dp" />
+
+            <!-- Section Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nearby Hospitals"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:textColor="#222222" />
+
+            <!-- Google Map -->
+            <fragment
+                android:id="@+id/map_fragment"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- My Appointment Button -->
+            <Button
+                android:id="@+id/btnMyAppointment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="My Appointment"
+                android:textAllCaps="false"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:padding="12dp"
+                android:textSize="16sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#6A1B9A" />
+
+            <!-- Hospital List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_hospitals"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:paddingBottom="8dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 🔹 FIXED FOOTER -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Detecting your location..."
-        android:textSize="14sp"
-        android:textColor="#444444"
-        android:paddingBottom="8dp" />
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/white"
+        app:menu="@menu/menu_patient_footer" />
 
-    <!-- Section Title -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nearby Hospitals"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:textColor="#222222" />
-
-    <!-- Google Map -->
-    <fragment
-        android:id="@+id/map_fragment"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="160dp"
-        android:layout_marginBottom="8dp"
-        android:background="#DDDDDD" />
-
-    <!-- My Appointment Button -->
-    <Button
-        android:id="@+id/btnMyAppointment"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="My Appointment"
-        android:textAllCaps="false"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:padding="12dp"
-        android:textSize="16sp"
-        android:textColor="@android:color/white"
-        android:backgroundTint="#6A1B9A" />
-
-
-
-
-
-    <!-- Hospital List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_hospitals"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:paddingTop="4dp"
-        android:paddingBottom="8dp" />
-</LinearLayout>
+</RelativeLayout>

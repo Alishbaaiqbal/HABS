@@ -17,24 +17,30 @@ import androidx.appcompat.app.AppCompatDelegate;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Objects;
 
 public class LoginActivity extends AppCompatActivity {
 
     EditText editTextEmail, editTextPASSWORD;
-    Button buttonLogin;   // ← Signup removed
+    Button buttonLogin;
     FirebaseAuth mAuth;
+    FirebaseFirestore firestore;
     ProgressBar progressBar;
-    TextView textView; // Forgot Password TextView
+    TextView textView; // Forgot Password
 
+    @Override
     public void onStart() {
         super.onStart();
+
         mAuth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
+
         FirebaseUser currentUser = mAuth.getCurrentUser();
+
         if (currentUser != null) {
-            startActivity(new Intent(getApplicationContext(), HomePage.class));
-            finish();
+            routeUser(currentUser);
         }
     }
 
@@ -46,6 +52,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         mAuth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
 
         editTextEmail = findViewById(R.id.Email);
         editTextPASSWORD = findViewById(R.id.PASSWORD);
@@ -53,16 +60,17 @@ public class LoginActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         textView = findViewById(R.id.forgotPassword);
 
-        // Forgot Password
+        // 🔹 Forgot Password
         textView.setOnClickListener(v -> {
-            String email = Objects.requireNonNull(editTextEmail.getText()).toString().trim();
+            String email = Objects.requireNonNull(editTextEmail.getText())
+                    .toString().trim();
 
             if (TextUtils.isEmpty(email)) {
-                Toast.makeText(LoginActivity.this, "Enter your email first", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Enter your email first", Toast.LENGTH_SHORT).show();
                 return;
             }
             if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                Toast.makeText(LoginActivity.this, "Enter a valid email address", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Enter a valid email address", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -71,28 +79,31 @@ public class LoginActivity extends AppCompatActivity {
                     .addOnCompleteListener(task -> {
                         progressBar.setVisibility(View.GONE);
                         if (task.isSuccessful()) {
-                            Toast.makeText(LoginActivity.this, "Reset email sent to your email.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Reset email sent.", Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(LoginActivity.this, "Unable to send reset email.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Unable to send reset email.", Toast.LENGTH_SHORT).show();
                         }
                     });
         });
 
-        // Login Button
+        // 🔹 LOGIN BUTTON
         buttonLogin.setOnClickListener(v -> {
-            String EMAIL = Objects.requireNonNull(editTextEmail.getText()).toString().trim();
-            String PASSWORD = Objects.requireNonNull(editTextPASSWORD.getText()).toString().trim();
+
+            String EMAIL = Objects.requireNonNull(editTextEmail.getText())
+                    .toString().trim();
+            String PASSWORD = Objects.requireNonNull(editTextPASSWORD.getText())
+                    .toString().trim();
 
             if (TextUtils.isEmpty(EMAIL)) {
-                Toast.makeText(LoginActivity.this, "Enter email", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Enter email", Toast.LENGTH_SHORT).show();
                 return;
             }
             if (!Patterns.EMAIL_ADDRESS.matcher(EMAIL).matches()) {
-                Toast.makeText(LoginActivity.this, "Enter a valid email", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Enter a valid email", Toast.LENGTH_SHORT).show();
                 return;
             }
             if (TextUtils.isEmpty(PASSWORD)) {
-                Toast.makeText(LoginActivity.this, "Enter password", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Enter password", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -100,15 +111,57 @@ public class LoginActivity extends AppCompatActivity {
 
             mAuth.signInWithEmailAndPassword(EMAIL, PASSWORD)
                     .addOnCompleteListener(task -> {
+
                         progressBar.setVisibility(View.GONE);
+
                         if (task.isSuccessful()) {
-                            Toast.makeText(LoginActivity.this, "Login successful.", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(getApplicationContext(), HomePage.class));
-                            finish();
+                            routeUser(mAuth.getCurrentUser());
                         } else {
-                            Toast.makeText(LoginActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this,
+                                    "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
                         }
                     });
         });
+    }
+
+    // 🔥 FINAL ROUTING LOGIC (MOST IMPORTANT)
+    private void routeUser(FirebaseUser user) {
+
+        String email = Objects.requireNonNull(user.getEmail()).toLowerCase();
+
+        if (email.endsWith("@hospital.com")) {
+            // 🔹 HOSPITAL LOGIN → fetch REAL hospital name
+            firestore.collection("Hospitals")
+                    .document(user.getUid())
+                    .get()
+                    .addOnSuccessListener(doc -> {
+
+                        if (doc.exists()) {
+                            String hospitalName = doc.getString("name");
+                            // example: "FM General Hospital"
+
+                            Intent intent = new Intent(
+                                    LoginActivity.this,
+                                    AppointmentTrackingActivity.class
+                            );
+                            intent.putExtra("hospitalCode", hospitalName);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            Toast.makeText(this,
+                                    "Hospital record not found",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+
+        } else {
+            // 🔹 PATIENT LOGIN
+            startActivity(new Intent(
+                    LoginActivity.this,
+                    HomePage.class
+            ));
+            finish();
+        }
     }
 }

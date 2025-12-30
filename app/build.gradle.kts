@@ -57,5 +57,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation ("androidx.annotation:annotation:1.7.1")
+    implementation ("com.google.android.material:material:1.11.0")
+
 
 }

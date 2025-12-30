@@ -9,12 +9,20 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.ViewHolder> {
+public class AppointmentAdapter
+        extends RecyclerView.Adapter<AppointmentAdapter.ViewHolder> {
 
-    List<Appointment> list;
+    public interface OnItemClick {
+        void onClick(int position);
+    }
 
-    public AppointmentAdapter(List<Appointment> list) {
+    private final List<Appointment> list;
+    private OnItemClick listener = null;
+
+    // 🔹 UPDATED CONSTRUCTOR
+    public AppointmentAdapter(List<Appointment> list, Object o) {
         this.list = list;
+        this.listener = listener;
     }
 
     @Override
@@ -34,6 +42,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         h.date.setText(a.date);
         h.slot.setText(a.slot);
         h.type.setText(a.type);
+
     }
 
     @Override
@@ -41,7 +50,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         return list.size();
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder {
+    static class ViewHolder extends RecyclerView.ViewHolder {
         TextView token, patient, doctor, date, slot, type;
 
         ViewHolder(View v) {

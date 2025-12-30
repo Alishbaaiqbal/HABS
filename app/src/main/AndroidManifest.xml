@@ -72,6 +72,31 @@
         <activity
             android:name=".DocterCurrentTokenActivity"
             android:exported="true" />
+        <activity
+            android:name=".AppointmentTrackingActivity"
+            android:exported="true" />
+
+        <activity
+            android:name=".DoctorAppointmentsActivity"
+            android:exported="true" />
+        <activity
+            android:name=".MyReceiptsActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".PatientProfileActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".FeedbackDoctorListActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".FeedbackFormActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".DoctorFeedbackActivity"
+            android:exported="true"/>
+
+
+
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
