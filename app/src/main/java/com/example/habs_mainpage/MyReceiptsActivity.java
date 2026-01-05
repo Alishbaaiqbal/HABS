@@ -37,7 +37,7 @@ public class MyReceiptsActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         // ✅ Adapter with click callback
-        adapter = new AppointmentAdapter(receiptList,null);
+        adapter = new AppointmentAdapter(this, receiptList);
         recyclerView.setAdapter(adapter);
 
         appointmentRef = FirebaseDatabase

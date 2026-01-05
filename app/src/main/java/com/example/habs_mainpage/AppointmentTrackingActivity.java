@@ -49,8 +49,9 @@ public class AppointmentTrackingActivity extends AppCompatActivity {
                     DoctorAppointmentsActivity.class
             );
             intent.putExtra("hospitalCode", hospitalCode);
-            intent.putExtra("doctorCode", doctor.doctorCode);
             intent.putExtra("doctorName", doctor.doctorName);
+            intent.putExtra("doctorCode", doctor.doctorCode);
+
             startActivity(intent);
         });
 
@@ -72,8 +73,9 @@ public class AppointmentTrackingActivity extends AppCompatActivity {
             for (DataSnapshot child : snapshot.getChildren()) {
 
                 String hc = child.child("hospitalCode").getValue(String.class);
-                String doctorCode = child.child("doctorCode").getValue(String.class);
                 String doctorName = child.child("doctorName").getValue(String.class);
+                String doctorCode = child.child("doctorCode").getValue(String.class);
+
 
                 if (!hospitalCode.equalsIgnoreCase(hc)) continue;
                 if (doctorCode == null || doctorName == null) continue;
@@ -87,7 +89,7 @@ public class AppointmentTrackingActivity extends AppCompatActivity {
                 }
 
                 if (!alreadyAdded) {
-                    doctorList.add(new DoctorItem(doctorCode, doctorName));
+                    doctorList.add(new DoctorItem(doctorName, doctorCode));
                 }
             }
 

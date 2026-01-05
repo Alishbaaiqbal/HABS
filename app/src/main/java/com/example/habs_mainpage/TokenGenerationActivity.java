@@ -70,7 +70,8 @@ public class TokenGenerationActivity extends AppCompatActivity {
                     String slot = snapshot.child("slot").getValue(String.class);
                     String type = snapshot.child("type").getValue(String.class);
                     String patientEmail = snapshot.child("email").getValue(String.class); // may be null
-                    String fee = snapshot.child("fee").getValue(String.class);            // ⭐ NEW
+                    String fee = snapshot.child("fee").getValue(String.class);            // fee
+                    String patientUid = snapshot.child("userId").getValue(String.class);  // ⭐ NEW
 
                     // Fill UI
                     tvPatientName.setText(patientName);
@@ -79,7 +80,7 @@ public class TokenGenerationActivity extends AppCompatActivity {
                     tvSlot.setText(slot);
                     tvType.setText(type);
 
-                    // Button ab yahan se payment page pe le jayega
+                    // Button navigates to payment page
                     btnProceedPayment.setOnClickListener(v -> {
                         if (fee == null) {
                             Toast.makeText(this, "Fee is missing for this appointment.", Toast.LENGTH_SHORT).show();
@@ -88,9 +89,10 @@ public class TokenGenerationActivity extends AppCompatActivity {
 
                         Intent intent = new Intent(TokenGenerationActivity.this, PaymentMethodActivity.class);
                         intent.putExtra("appointmentId", appointmentId);
-                        intent.putExtra("fee", fee);              // ⭐ fee send to payment screen
+                        intent.putExtra("fee", fee);
                         intent.putExtra("patientName", patientName);
                         intent.putExtra("patientEmail", patientEmail);
+                        intent.putExtra("patientUid", patientUid); // ⭐ SEND UID
                         startActivity(intent);
                     });
 

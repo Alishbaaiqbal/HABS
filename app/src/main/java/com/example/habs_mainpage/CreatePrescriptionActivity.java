@@ -11,31 +11,23 @@ import java.util.*;
 
 public class CreatePrescriptionActivity extends AppCompatActivity {
 
-    Spinner spinnerAppointments;
     TextView tvPatientInfo;
     EditText etDiagnosis, etMedName, etDosage, etFrequency, etDuration;
     Button btnSave;
 
     DatabaseReference appointmentRef, prescriptionRef;
 
-    String selectedAppointmentId = null;
+    String appointmentId;
     String patientName = "";
     String patientContact = "";
     String doctorName = "";
     String doctorCode = "";
-
-    List<String> appointmentIds = new ArrayList<>();
-    List<String> spinnerItems = new ArrayList<>();
-    ArrayAdapter<String> spinnerAdapter;
-
-    boolean ignoreFirstSelection = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_prescription);
 
-        spinnerAppointments = findViewById(R.id.spinnerAppointments);
         tvPatientInfo = findViewById(R.id.tvSelectedPatient);
         etDiagnosis = findViewById(R.id.etDiagnosis);
         etMedName = findViewById(R.id.etMedicineName);
@@ -43,6 +35,14 @@ public class CreatePrescriptionActivity extends AppCompatActivity {
         etFrequency = findViewById(R.id.etFrequency);
         etDuration = findViewById(R.id.etDuration);
         btnSave = findViewById(R.id.btnSavePrescription);
+
+        appointmentId = getIntent().getStringExtra("appointmentId");
+
+        if (appointmentId == null) {
+            Toast.makeText(this, "Appointment missing", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         appointmentRef = FirebaseDatabase
                 .getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
@@ -52,101 +52,20 @@ public class CreatePrescriptionActivity extends AppCompatActivity {
                 .getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
                 .getReference("Prescriptions");
 
-        spinnerAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                spinnerItems
-        );
-        spinnerAppointments.setAdapter(spinnerAdapter);
-
-        spinnerAppointments.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
-
-                if (ignoreFirstSelection) {
-                    ignoreFirstSelection = false;
-                    return;
-                }
-
-                if (position == 0) {
-                    selectedAppointmentId = null;
-                    tvPatientInfo.setText("No appointment selected");
-                    return;
-                }
-
-                if (position < 0 || position >= appointmentIds.size()) return;
-
-                selectedAppointmentId = appointmentIds.get(position);
-                loadAppointmentDetails(selectedAppointmentId);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) { }
-        });
+        // 🔥 LOAD FULL APPOINTMENT DETAILS (JUST LIKE OLD CODE)
+        loadAppointmentDetails();
 
         btnSave.setOnClickListener(v -> savePrescription());
-
-        loadPendingAppointments();
     }
 
-    private void loadPendingAppointments() {
-
-        appointmentRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                appointmentIds.clear();
-                spinnerItems.clear();
-
-                appointmentIds.add("NONE");
-                spinnerItems.add("Select Appointment");
-
-                for (DataSnapshot snap : snapshot.getChildren()) {
-
-                    String status = snap.child("status").getValue(String.class);
-                    if (!"Pending".equalsIgnoreCase(status)) continue;
-
-                    String appointmentId = snap.getKey();
-                    String patient = snap.child("patientName").getValue(String.class);
-                    String date = snap.child("date").getValue(String.class);
-                    String slot = snap.child("slot").getValue(String.class);
-
-                    if (appointmentId == null) continue;
-
-                    appointmentIds.add(appointmentId);
-                    spinnerItems.add(
-                            appointmentId + " | " +
-                                    safe(patient) + " | " +
-                                    safe(date) + " | " +
-                                    safe(slot)
-                    );
-                }
-
-                spinnerAdapter.notifyDataSetChanged();
-
-                if (appointmentIds.size() == 1) {
-                    Toast.makeText(CreatePrescriptionActivity.this,
-                            "No pending appointments found",
-                            Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(CreatePrescriptionActivity.this,
-                        "Failed to load appointments",
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void loadAppointmentDetails(String appointmentId) {
+    private void loadAppointmentDetails() {
 
         appointmentRef.child(appointmentId).get()
                 .addOnSuccessListener(snapshot -> {
 
                     if (!snapshot.exists()) {
-                        tvPatientInfo.setText("Appointment not found");
+                        Toast.makeText(this, "Appointment not found", Toast.LENGTH_LONG).show();
+                        finish();
                         return;
                     }
 
@@ -164,8 +83,8 @@ public class CreatePrescriptionActivity extends AppCompatActivity {
 
     private void savePrescription() {
 
-        if (selectedAppointmentId == null) {
-            Toast.makeText(this, "Select an appointment first", Toast.LENGTH_SHORT).show();
+        if (patientName.isEmpty() || doctorName.isEmpty()) {
+            Toast.makeText(this, "Appointment data not loaded yet", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -178,7 +97,7 @@ public class CreatePrescriptionActivity extends AppCompatActivity {
         }
 
         Map<String, Object> prescription = new HashMap<>();
-        prescription.put("appointmentId", selectedAppointmentId);
+        prescription.put("appointmentId", appointmentId);
         prescription.put("doctorName", doctorName);
         prescription.put("doctorCode", doctorCode);
         prescription.put("patientName", patientName);
@@ -191,22 +110,20 @@ public class CreatePrescriptionActivity extends AppCompatActivity {
         med.put("frequency", etFrequency.getText().toString().trim());
         med.put("duration", etDuration.getText().toString().trim());
 
-        List<Map<String, String>> meds = new ArrayList<>();
-        meds.add(med);
+        prescription.put("medicines", Collections.singletonList(med));
 
-        prescription.put("medicines", meds);
-
-        prescriptionRef.child(selectedAppointmentId)
+        prescriptionRef.child(appointmentId)
                 .setValue(prescription)
-                .addOnSuccessListener(aVoid ->
+                .addOnSuccessListener(a ->
                         Toast.makeText(this,
                                 "Prescription saved successfully",
                                 Toast.LENGTH_SHORT).show()
                 )
                 .addOnFailureListener(e ->
                         Toast.makeText(this,
-                                "Failed to save prescription",
-                                Toast.LENGTH_SHORT).show());
+                                e.getMessage(),
+                                Toast.LENGTH_LONG).show()
+                );
     }
 
     private String safe(String v) {

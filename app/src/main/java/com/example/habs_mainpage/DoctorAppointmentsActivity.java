@@ -36,7 +36,6 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_doctor_appointments);
 
-        // 🔑 Get data from intent
         hospitalCode = getIntent().getStringExtra("hospitalCode");
         doctorCode = getIntent().getStringExtra("doctorCode");
         doctorName = getIntent().getStringExtra("doctorName");
@@ -47,15 +46,14 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
             return;
         }
 
-        // 🔹 Header
         TextView tvHeader = findViewById(R.id.tvDoctorHeader);
         tvHeader.setText("Appointments of " + doctorName);
 
-        // 🔹 RecyclerView
         recyclerView = findViewById(R.id.recyclerDoctorAppointments);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        adapter = new AppointmentAdapter(appointmentList, null);
+        // ✅ FIXED ADAPTER CALL
+        adapter = new AppointmentAdapter(this, appointmentList);
         recyclerView.setAdapter(adapter);
 
         appointmentRef = FirebaseDatabase
@@ -79,45 +77,25 @@ public class DoctorAppointmentsActivity extends AppCompatActivity {
                 if (!hospitalCode.equalsIgnoreCase(hc)) continue;
                 if (!doctorCode.equalsIgnoreCase(dc)) continue;
 
-                String token =
-                        child.child("appointmentId").getValue(String.class);
-                if (token == null) token = child.getKey();
-
-                String patientName =
-                        child.child("patientName").getValue(String.class);
-                String date =
-                        child.child("date").getValue(String.class);
-                String slot =
-                        child.child("slot").getValue(String.class);
-                String type =
-                        child.child("type").getValue(String.class);
-                String doctor =
-                        child.child("doctorName").getValue(String.class);
+                String token = child.getKey();
+                String patient = child.child("patientName").getValue(String.class);
+                String date = child.child("date").getValue(String.class);
+                String slot = child.child("slot").getValue(String.class);
+                String type = child.child("type").getValue(String.class);
+                String doctor = child.child("doctorName").getValue(String.class);
 
                 appointmentList.add(
-                        new Appointment(
-                                token,
-                                patientName,
-                                doctor,
-                                date,
-                                slot,
-                                type
-                        )
+                        new Appointment(token, patient, doctor, date, slot, type)
                 );
             }
 
-            // 🔥 SORT BY DATE + TIME (DESCENDING)
             Collections.sort(appointmentList, (a1, a2) -> {
                 try {
                     SimpleDateFormat sdf =
                             new SimpleDateFormat("dd MMM yyyy hh:mm a", Locale.US);
-
                     Date d1 = sdf.parse(a1.date + " " + a1.slot);
                     Date d2 = sdf.parse(a2.date + " " + a2.slot);
-
-                    // latest appointment first
                     return d2.compareTo(d1);
-
                 } catch (Exception e) {
                     return 0;
                 }

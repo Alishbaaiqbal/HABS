@@ -48,7 +48,7 @@ public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
     private static final String API_KEY = "AIzaSyD0LZrCsWehM4x9opUS7gKPQobUUzvBJKA";
 
     private GoogleMap mMap;
-    private Button btnMyAppointment;
+    private Button btnMyAppointment, btnMyPrescription;
 
     private FusedLocationProviderClient fusedLocationClient;
     private TextView currentAddressTextView;
@@ -86,6 +86,11 @@ public class HomePage extends AppCompatActivity implements OnMapReadyCallback {
         btnMyAppointment = findViewById(R.id.btnMyAppointment);
         btnMyAppointment.setOnClickListener(v -> {
             startActivity(new Intent(this, MyAppointmentsActivity.class));
+        });
+
+        btnMyPrescription = findViewById(R.id.btnMyPrescription);
+        btnMyPrescription.setOnClickListener(v -> {
+            startActivity(new Intent(this, PatientPrescriptionHistoryActivity.class));
         });
 
         // 🔹 FOOTER NAVIGATION SETUP
