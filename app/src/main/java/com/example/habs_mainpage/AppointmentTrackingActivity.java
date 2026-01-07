@@ -91,7 +91,7 @@ public class AppointmentTrackingActivity extends AppCompatActivity {
                 if (!alreadyAdded) {
                     doctorList.add(new DoctorItem(doctorName, doctorCode));
                 }
-            }
+            } 
 
             adapter.notifyDataSetChanged();
         });

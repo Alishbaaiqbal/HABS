@@ -39,31 +39,27 @@ public class FeedbackFormActivity extends AppCompatActivity {
         etComment = findViewById(R.id.etComment);
         btnSubmit = findViewById(R.id.btnSubmitFeedback);
 
-        // ✅ GET BOTH VALUES
+        // ✅ Intent data
         doctorCode = getIntent().getStringExtra("doctorCode");
         doctorName = getIntent().getStringExtra("doctorName");
 
-        // 🔒 SAFETY CHECK
-        if (doctorCode == null || doctorCode.trim().isEmpty()) {
+        if (doctorCode == null || doctorCode.isEmpty()) {
             Toast.makeText(this, "Invalid doctor", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
 
-        // ✅ SHOW NAME IN UI (NOT CODE)
-        tvDoctorName.setText(
-                doctorName != null ? doctorName : "Doctor Feedback"
-        );
+        tvDoctorName.setText("Feedback for " + doctorName);
 
         patientId = FirebaseAuth.getInstance().getUid();
-        patientName = "Patient"; // optional (can enhance later)
+        patientName = "Patient"; // optional later enhance
 
-        // ✅ FIREBASE PATH = DOCTOR CODE ONLY
+        // ✅ SAFE Firebase path (doctorCode ONLY)
         feedbackRef = FirebaseDatabase
                 .getInstance("https://fyp-maju-default-rtdb.asia-southeast1.firebasedatabase.app")
                 .getReference("Feedback")
-                .child(doctorCode)   // 🔑 SAFE
-                .child(patientId);
+                .child(doctorCode)   // 🔐 SAFE KEY
+                .child(patientId);  // one feedback per patient
 
         btnSubmit.setOnClickListener(v -> submitFeedback());
     }
@@ -84,14 +80,13 @@ public class FeedbackFormActivity extends AppCompatActivity {
         }
 
         FeedbackItem feedback = new FeedbackItem(
-                doctorName,          // UI value
+                doctorName,          // 👤 UI display
                 patientName,
                 rating,
                 comment,
                 new SimpleDateFormat(
                         "dd MMM yyyy, hh:mm a",
-                        Locale.US
-                ).format(new Date())
+                        Locale.US).format(new Date())
         );
 
         feedbackRef.setValue(feedback)
